@@ -26,6 +26,6 @@ Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 - Tested earlier: backend 100%, frontend 100%
 
 ## Backlog / Next
-- P1: Razorpay integration for real INR payments
+- Instamojo: currently a hosted payment-LINK redirect to https://www.instamojo.com/@obliccosmetics/ (order created as record, then user pays on Instamojo, quoting order number). Full API integration (auto amount + payment confirmation/webhook) requires Instamojo API keys.
 - P1: Add products as new categories launch (Makeup/Fragrances/Bodycare)
 - P2: User accounts, order history, wishlist, product search bar

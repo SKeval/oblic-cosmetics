@@ -10,8 +10,8 @@ const HERO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ecff02e89954433ca3e3c6446ed3f60a9ec55e389b5647097c9a1d991178a5e0.jpeg" },
-  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d546d6b209115ab4b1fbc5f83b178b9359a01b42e7d49484b53250463133bf30.jpeg" },
+  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/cgwugo3w_WhatsApp%20Image%202026-07-12%20at%2007.28.55%20%281%29.webp" },
+  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/uy1s3n6m_WhatsApp%20Image%202026-07-12%20at%2007.28.36%20%282%29.webp" },
   { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
@@ -85,12 +85,12 @@ export default function Home() {
             c.soon ? (
               <div key={c.name} data-testid={`category-soon-${c.name.toLowerCase()}`}
                 className="relative aspect-[3/4] overflow-hidden rounded-[3px] group cursor-default select-none">
-                <img src={c.img} alt={c.name} className="w-full h-full object-cover grayscale-[0.35] transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-plum/55 group-hover:bg-plum/45 transition-colors" />
+                <img src={c.img} alt={c.name} className="w-full h-full object-cover grayscale-[0.4] transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-plum/85 group-hover:bg-plum/80 transition-colors" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                  <span className="text-[11px] tracking-[0.25em] uppercase text-cream/80 border border-cream/40 rounded-full px-4 py-1.5">Coming Soon</span>
+                  <span className="text-[11px] tracking-[0.25em] uppercase text-cream border border-cream/70 rounded-full px-4 py-1.5">Coming Soon</span>
                   <span className="font-display text-cream text-3xl mt-4">{c.name}</span>
-                  <span className="text-cream/70 text-[12px] mt-1">Worth the wait ✦</span>
+                  <span className="text-cream/90 text-[12px] mt-1.5">Worth the wait ✦</span>
                 </div>
               </div>
             ) : (

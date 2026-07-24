@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ExternalLink } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { createOrder } from "../api";
+
+const INSTAMOJO_URL = "https://www.instamojo.com/@obliccosmetics/";
 
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
@@ -27,10 +29,17 @@ export default function Checkout() {
     return (
       <div className="container py-28 text-center max-w-lg" data-testid="order-confirmation">
         <CheckCircle2 size={52} className="mx-auto text-sage-deep" strokeWidth={1.3} />
-        <h1 className="font-display text-4xl mt-6">Thank you, {order.name.split(" ")[0]}!</h1>
-        <p className="text-ink-soft mt-3">Your order <span className="font-medium">#{order.order_number}</span> is confirmed. A receipt has been sent to {order.email}.</p>
-        <p className="font-display text-2xl mt-6">Total: ₹{order.total.toFixed(0)}</p>
-        <Link to="/shop" className="inline-block mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
+        <h1 className="font-display text-4xl mt-6">Almost there, {order.name.split(" ")[0]}!</h1>
+        <p className="text-ink-soft mt-3">Your order <span className="font-medium">#{order.order_number}</span> has been placed. Complete your secure payment via Instamojo to confirm it.</p>
+        <p className="font-display text-2xl mt-6">Amount to pay: ₹{order.total.toFixed(0)}</p>
+        <a href={INSTAMOJO_URL} target="_blank" rel="noopener noreferrer" data-testid="pay-instamojo-btn"
+          className="inline-flex items-center gap-2 mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">
+          Pay ₹{order.total.toFixed(0)} on Instamojo <ExternalLink size={15} />
+        </a>
+        <div className="mt-5">
+          <Link to="/shop" className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Continue shopping</Link>
+        </div>
+        <p className="text-[12px] text-muted mt-6 max-w-sm mx-auto">You'll be redirected to Oblic's secure Instamojo page. Please mention your order number <span className="font-medium">#{order.order_number}</span> during payment.</p>
       </div>
     );
   }
@@ -50,8 +59,9 @@ export default function Checkout() {
             data-testid="checkout-address" className="w-full bg-paper border border-line rounded-[20px] px-5 py-3.5 outline-none focus:border-ink resize-none" />
           <button type="submit" disabled={loading || items.length === 0} data-testid="place-order-btn"
             className="w-full bg-plum text-cream py-4 rounded-full text-[13px] tracking-[0.14em] uppercase hover:bg-ink transition-colors disabled:opacity-50">
-            {loading ? "Placing order…" : "Place Order"}
+            {loading ? "Processing…" : "Proceed to Payment"}
           </button>
+          <p className="text-[12px] text-muted text-center">Secure payment powered by Instamojo · UPI, Cards & Netbanking</p>
         </form>
 
         <div className="bg-cream-deep/50 rounded-[3px] p-6 h-fit">
