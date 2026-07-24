@@ -12,17 +12,20 @@ User wanted to redesign their cosmetics website to match reference images of "Lu
 Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 
 ## Implemented (2026-06)
-- Home: hero, marquee, best-seller grid (8), category tiles, editorial split, FAQ
-- Shop: category radio filters, On Sale checkbox, sort dropdown, result count
-- Product Detail: gallery + thumbnails, size selector, qty, add-to-cart, feature icons, accordions (Detail/Benefits/How to Use/Ingredients), reviews (with submit form + rating distribution), You May Also Like
-- Cart drawer (qty update/remove) + Checkout page (order confirmation)
-- Newsletter subscribe (footer)
-- Backend: /api/products, /api/products/{id}, /api/categories, /api/products/{id}/reviews (GET/POST), /api/faqs, /api/newsletter, /api/orders
-- Seed: 12 products across Skincare/Makeup/Haircare/Fragrances/Bodycare, ~72 reviews, 5 FAQs
-- Tested: backend 100% (17 pytest), frontend 100% (all flows)
+- Rebranded to **Oblic** (logo extracted from client PDF, transparent PNG in navbar/footer/mobile menu)
+- **3 real products only** with accurate label details + generated high-res brandless product photos:
+  - Rosemary Methi Shampoo (Haircare, 200ml) — ₹320 (MRP ₹400)
+  - Fenugreek Hair Oil (Haircare, 100ml) — ₹180 (MRP ₹225)
+  - Niacinamide Face Serum (Skincare, 30ml) — ₹540 (MRP ₹675)
+- Pricing fully in **INR (₹)** across cards/detail/cart/checkout; free shipping over ₹999; "Made in India" messaging
+- Upcoming categories (Makeup, Fragrances, Bodycare) shown as creative **"Coming Soon"** tiles (home) and disabled "SOON" filters (shop)
+- Clean brandless hero image (no fake labels)
+- Home: hero, marquee, best-sellers (3), category grid w/ coming-soon, editorial, FAQ
+- Shop: category filters + coming-soon, on-sale, sort, result count
+- Product Detail, Cart drawer, Checkout, Newsletter, Reviews — all functional
+- Tested earlier: backend 100%, frontend 100%
 
 ## Backlog / Next
-- P1: Swap in user's real brand name, logo, and product catalog/images (user to provide)
-- P1: Wishlist persistence, product search bar
-- P2: Real payment integration (Stripe), user accounts, order history
-- P2: Blog/journal, brand pages, product variants beyond size
+- P1: Razorpay integration for real INR payments
+- P1: Add products as new categories launch (Makeup/Fragrances/Bodycare)
+- P2: User accounts, order history, wishlist, product search bar

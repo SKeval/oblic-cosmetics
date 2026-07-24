@@ -6,14 +6,14 @@ import { getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
 import FAQ from "../components/FAQ";
 
-const HERO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/6a663a877846ac520feaace68ffa2487bc34c8cd7545d22ba9d868a3d9ee5632.jpeg";
+const HERO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7d90171b8012048ab26a3f5efd17148d8b2805030ffc55cb0b204808f9edde18.jpeg";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", img: "https://images.unsplash.com/photo-1616750819456-5cdee9b85d22?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
-  { name: "Fragrances", img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
-  { name: "Bodycare", img: "https://images.pexels.com/photos/8533212/pexels-photo-8533212.jpeg?auto=compress&cs=tinysrgb&w=700" },
-  { name: "Makeup", img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
+  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d7ac2a6d14fb56c907236c1d551f8fbe71a6abe82272399a26542c7beaf630ed.jpeg" },
+  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7ddb019425390a554babe3d899cbff7e90949009695ec7d2d03623ffd9b99a03.jpeg" },
+  { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
+  { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
 
 const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Paraben & Sulphate Free", "Made in India", "Free Shipping Over ₹999"];
@@ -69,21 +69,38 @@ export default function Home() {
             View All <ArrowRight size={15} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-          {products.slice(0, 8).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-12">
+          {products.slice(0, 6).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
         </div>
       </section>
 
       {/* Categories */}
       <section className="container pb-8">
+        <div className="flex items-end justify-between mb-8">
+          <h2 className="font-display text-4xl md:text-5xl leading-none">Shop by Category</h2>
+          <p className="text-ink-soft text-[14px] max-w-xs hidden md:block">More collections are on the way — new Oblic rituals launching soon.</p>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {CATS.map((c, i) => (
-            <Link to="/shop" key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
-              className="relative aspect-[3/4] overflow-hidden rounded-[3px] group">
-              <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-ink/20 group-hover:bg-ink/35 transition-colors" />
-              <span className="absolute bottom-5 left-5 font-display text-cream text-2xl">{c.name}</span>
-            </Link>
+          {CATS.map((c) => (
+            c.soon ? (
+              <div key={c.name} data-testid={`category-soon-${c.name.toLowerCase()}`}
+                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group cursor-default select-none">
+                <img src={c.img} alt={c.name} className="w-full h-full object-cover grayscale-[0.35] transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-plum/55 group-hover:bg-plum/45 transition-colors" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                  <span className="text-[11px] tracking-[0.25em] uppercase text-cream/80 border border-cream/40 rounded-full px-4 py-1.5">Coming Soon</span>
+                  <span className="font-display text-cream text-3xl mt-4">{c.name}</span>
+                  <span className="text-cream/70 text-[12px] mt-1">Worth the wait ✦</span>
+                </div>
+              </div>
+            ) : (
+              <Link to={c.to} key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
+                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group">
+                <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-ink/25 group-hover:bg-ink/40 transition-colors" />
+                <span className="absolute bottom-5 left-5 font-display text-cream text-2xl">{c.name}</span>
+              </Link>
+            )
           ))}
         </div>
       </section>

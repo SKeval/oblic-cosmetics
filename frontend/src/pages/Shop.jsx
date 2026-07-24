@@ -11,6 +11,8 @@ const SORTS = [
   { v: "rating", label: "Top Rated" },
 ];
 
+const COMING_SOON = ["Makeup", "Fragrances", "Bodycare"];
+
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -47,7 +49,7 @@ export default function Shop() {
       {/* Hero band */}
       <section className="container pt-6">
         <div className="relative rounded-[4px] overflow-hidden bg-plum">
-          <img src="https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/6a663a877846ac520feaace68ffa2487bc34c8cd7545d22ba9d868a3d9ee5632.jpeg"
+          <img src="https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7d90171b8012048ab26a3f5efd17148d8b2805030ffc55cb0b204808f9edde18.jpeg"
             alt="Collections" className="w-full h-[300px] md:h-[360px] object-cover opacity-90" />
           <div className="absolute inset-0 bg-gradient-to-r from-ink/70 to-transparent flex flex-col justify-center px-8 md:px-14">
             <p className="text-cream/70 text-[12px] tracking-[0.22em] uppercase mb-3">Shop All</p>
@@ -85,6 +87,16 @@ export default function Shop() {
                       </span>
                       <span className={category === c ? "text-ink" : "text-ink-soft"}>{c}</span>
                     </button>
+                  ))}
+                  {COMING_SOON.map((c) => (
+                    <div key={c} data-testid={`filter-soon-${c.toLowerCase()}`}
+                      className="flex items-center justify-between gap-3 text-[14.5px] w-full text-left opacity-55 cursor-not-allowed">
+                      <span className="flex items-center gap-3">
+                        <span className="w-4 h-4 rounded-full border border-ink/20" />
+                        <span className="text-muted">{c}</span>
+                      </span>
+                      <span className="text-[10px] tracking-[0.12em] uppercase text-plum bg-sage/60 rounded-full px-2 py-0.5">Soon</span>
+                    </div>
                   ))}
                 </div>
               </div>
