@@ -3,8 +3,8 @@ import { MapPin, MessageCircle, Instagram, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const ADDRESS = "314 The Gellery Business Hub 2, near Mahaveer Chowk, Yogichowk, Surat, Gujarat 395011.";
-export const WHATSAPP_DISPLAY = "+91 17623 067169";
-export const WHATSAPP_LINK = "https://wa.me/9117623067169";
+export const WHATSAPP_DISPLAY = "+91 7623067169";
+export const WHATSAPP_LINK = "https://wa.me/917623067169";
 export const INSTAGRAM_LINK = "https://www.instagram.com/oblic_cosmetics";
 export const MAPS_LINK = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(ADDRESS);
 
@@ -19,7 +19,7 @@ export default function About() {
         <h1 className="font-display text-5xl md:text-7xl leading-[0.95] max-w-3xl">Luxury in Every Touch</h1>
         <p className="text-ink-soft mt-6 max-w-2xl text-[16px] leading-relaxed">
           Oblic is a homegrown Indian beauty brand crafting clean, plant-powered rituals for hair and skin.
-          Every formula is paraben-free, sulphate-free and mineral-oil free — thoughtfully made in India,
+          Every formula is paraben-free, sulphate-free and mineral-oil free, thoughtfully made in India,
           never tested on animals, and designed to feel like a small daily luxury.
         </p>
       </section>
@@ -56,7 +56,7 @@ export default function About() {
               </div>
               <p className="text-[12px] tracking-[0.16em] uppercase text-muted mb-3">WhatsApp Us</p>
               <p className="text-ink text-[18px] font-medium">{WHATSAPP_DISPLAY}</p>
-              <p className="text-muted text-[14px] mt-1">Mon–Sat, 10am – 7pm</p>
+              <p className="text-muted text-[14px] mt-1">Mon to Sat, 10am to 7pm</p>
               <span className="inline-flex items-center gap-1.5 mt-5 text-[13px] tracking-wide group-hover:gap-2.5 transition-all">
                 Chat with us <ArrowRight size={14} />
               </span>

@@ -78,7 +78,7 @@ export default function Home() {
       <section className="container pb-8">
         <div className="flex items-end justify-between mb-8">
           <h2 className="font-display text-4xl md:text-5xl leading-none">Shop by Category</h2>
-          <p className="text-ink-soft text-[14px] max-w-xs hidden md:block">More collections are on the way — new Oblic rituals launching soon.</p>
+          <p className="text-ink-soft text-[14px] max-w-xs hidden md:block">More collections are on the way. New Oblic rituals launching soon.</p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {CATS.map((c) => (

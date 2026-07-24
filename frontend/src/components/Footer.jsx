@@ -1,12 +1,31 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { subscribe } from "../api";
 import { Facebook, Instagram, MapPin, MessageCircle } from "lucide-react";
 import { ADDRESS, WHATSAPP_DISPLAY, WHATSAPP_LINK, INSTAGRAM_LINK, MAPS_LINK } from "../pages/About";
 
 const COLS = [
-  { title: "Shop", links: ["Shop All", "Bundle", "Sale", "Gifts", "Membership"] },
-  { title: "Category", links: ["Skincare", "Makeup", "Haircare", "Fragrances", "Bodycare"] },
-  { title: "Company", links: ["About", "Journal", "Sustainability", "Careers", "Contact"] },
+  { title: "Shop", links: [
+    { label: "Shop All", to: "/shop" },
+    { label: "Best Sellers", to: "/shop" },
+    { label: "On Sale", to: "/shop?on_sale=true" },
+    { label: "Haircare", to: "/shop?category=Haircare" },
+    { label: "Skincare", to: "/shop?category=Skincare" },
+  ]},
+  { title: "Category", links: [
+    { label: "Skincare", to: "/shop?category=Skincare" },
+    { label: "Haircare", to: "/shop?category=Haircare" },
+    { label: "Makeup", to: "/shop" },
+    { label: "Fragrances", to: "/shop" },
+    { label: "Bodycare", to: "/shop" },
+  ]},
+  { title: "Company", links: [
+    { label: "About", to: "/about" },
+    { label: "Contact", to: "/about" },
+    { label: "Terms & Conditions", to: "/terms" },
+    { label: "Refund Policy", to: "/refund-policy" },
+    { label: "Shipping Policy", to: "/shipping-policy" },
+  ]},
 ];
 
 export default function Footer() {
@@ -61,7 +80,7 @@ export default function Footer() {
         <div className="container py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
             <img src="/oblic-logo.png" alt="Oblic" className="h-8 w-auto" />
-            <p className="text-ink-soft text-[14px] mt-4 max-w-xs">Clean, considered beauty for the everyday ritual — crafted in India.</p>
+            <p className="text-ink-soft text-[14px] mt-4 max-w-xs">Clean, considered beauty for the everyday ritual, crafted in India.</p>
             <a href={MAPS_LINK} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 mt-5 text-[13.5px] text-ink-soft hover:text-ink transition-colors max-w-xs" data-testid="footer-address">
               <MapPin size={16} strokeWidth={1.6} className="mt-0.5 shrink-0" /> <span>{ADDRESS}</span>
             </a>
@@ -84,7 +103,7 @@ export default function Footer() {
               <p className="text-[12px] tracking-[0.18em] uppercase text-muted mb-4">{c.title}</p>
               <ul className="space-y-3">
                 {c.links.map((l) => (
-                  <li key={l}><a href="#" className="text-[14.5px] text-ink-soft hover:text-ink transition-colors">{l}</a></li>
+                  <li key={l.label}><Link to={l.to} className="text-[14.5px] text-ink-soft hover:text-ink transition-colors">{l.label}</Link></li>
                 ))}
               </ul>
             </div>
@@ -92,7 +111,11 @@ export default function Footer() {
         </div>
         <div className="container border-t border-line py-6 flex flex-col sm:flex-row justify-between gap-3 text-[13px] text-muted">
           <span>© {new Date().getFullYear()} Oblic. All rights reserved.</span>
-          <span>Privacy · Terms · Shipping</span>
+          <div className="flex gap-4 flex-wrap">
+            <Link to="/terms" className="hover:text-ink transition-colors" data-testid="footer-terms">Terms & Conditions</Link>
+            <Link to="/refund-policy" className="hover:text-ink transition-colors" data-testid="footer-refund">Refund Policy</Link>
+            <Link to="/shipping-policy" className="hover:text-ink transition-colors" data-testid="footer-shipping">Shipping Policy</Link>
+          </div>
         </div>
       </div>
     </footer>

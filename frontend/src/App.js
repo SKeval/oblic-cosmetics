@@ -10,6 +10,9 @@ import Shop from "@/pages/Shop";
 import ProductDetail from "@/pages/ProductDetail";
 import Checkout from "@/pages/Checkout";
 import About from "@/pages/About";
+import Terms from "@/pages/Terms";
+import RefundPolicy from "@/pages/RefundPolicy";
+import ShippingPolicy from "@/pages/ShippingPolicy";
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/shipping-policy" element={<ShippingPolicy />} />
           </Routes>
         </main>
         <Footer />
