@@ -2,9 +2,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 # Generated high-res Oblic product photos (no visible branding)
-SHAMPOO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/uy1s3n6m_WhatsApp%20Image%202026-07-12%20at%2007.28.36%20%282%29.webp"
-OIL = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/vfv2mkig_WhatsApp%20Image%202026-07-12%20at%2007.28.37%20%283%29.jpeg"
-SERUM = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/cgwugo3w_WhatsApp%20Image%202026-07-12%20at%2007.28.55%20%281%29.webp"
+SHAMPOO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/aa4daf1a289a885e3ff7e33822d2663887859cb841d434cdebbc36e450beecc3.jpeg"
+OIL = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/8b4aed20ca4530a78f80f8e3429d6fbfcb394327080d72a8804da694aba44f15.jpeg"
+SERUM = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ea440177fda1ce339730408c4835940fb25ebeb5c4907431406699e0fbe315e5.jpeg"
 
 # Supporting lifestyle / texture imagery
 TEX = "https://images.unsplash.com/photo-1659007747376-3811b34e458f?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
