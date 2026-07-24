@@ -6,7 +6,9 @@ import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "../pages/About";
 const EMAIL = "Obliccosmetics@gmail.com";
 
 export default function PolicyLayout({ title, intro, sections, contactLabel }) {
-  useEffect(() => window.scrollTo(0, 0), []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="container py-14 max-w-3xl" data-testid="policy-page">
       <Link to="/" className="inline-flex items-center gap-2 text-[13px] text-muted hover:text-ink mb-8 transition-colors">
