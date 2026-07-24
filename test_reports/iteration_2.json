@@ -1,0 +1,37 @@
+{
+  "summary": "Verified image-cropping bug fix on Shop grid and Product Detail. All 3 products render with a 2:3 container matching the 2:3 native image (848x1264) — no visible cropping. Regression checks on filters, sort, cart, checkout, and Instamojo payment redirect all pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_measurements": {
+    "grid_cards": "3/3 images natural 848x1264 (ratio 0.671) rendered 317x476 (ratio 0.666) — matches, no crop",
+    "pdp_main_image": "natural 848x1264 (0.671) rendered 512x768 (0.667) — matches, no crop",
+    "visual_check": "Rosemary Methi Shampoo bottle fully visible pump-to-base on PDP; all 3 cards on /shop show complete bottles"
+  },
+  "regression_verified": [
+    "GET /api/products returns 3 products; grid renders",
+    "On-sale filter and sort dropdown present and working",
+    "Product card -> PDP navigation + Add to Cart opens cart drawer with ₹ pricing",
+    "Checkout collects name/email/address; Place Order creates order (LUM66343579) and shows confirmation",
+    "Pay on Instamojo button visible with href=https://www.instamojo.com/@obliccosmetics/ (MOCKED external redirect as expected)",
+    "₹ INR currency shown on cards, PDP, cart, and checkout confirmation (₹320)"
+  ],
+  "notes": [
+    "Category filter testid pattern in the request said 'filter-cat-{name}' but that exact selector was not present in DOM — checkbox filters function correctly for Haircare/Skincare; if strict testid contract is required, main agent may add data-testid='filter-cat-Haircare' etc. Not blocking.",
+    "Instamojo is a hosted payment link redirect (MOCKED integration) — no real payment tested."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Optional: add data-testid='filter-cat-Haircare' and 'filter-cat-Skincare' on category checkboxes to match documented contract."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested this iteration)", "frontend": "100%"},
+  "seed_data_creation": "None (used existing 3 seeded products)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Image cropping fix verified via computed aspect ratios (client vs natural). PDP main image and grid card image containers use aspect-[2/3] + object-cover which perfectly matches 848x1264 native images. Instamojo is external redirect only."
+}

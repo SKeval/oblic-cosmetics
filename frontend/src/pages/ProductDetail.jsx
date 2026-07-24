@@ -73,7 +73,7 @@ export default function ProductDetail() {
                 <span className="absolute top-4 left-4 z-10 bg-cream text-ink text-[11px] tracking-[0.08em] px-3 py-1 rounded-full">{product.badges[0]}</span>
               )}
               <motion.img key={activeImg} initial={{ opacity: 0.3 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
-                src={product.images[activeImg]} alt={product.name} className="w-full aspect-[4/5] object-cover" data-testid="main-image" />
+                src={product.images[activeImg]} alt={product.name} className="w-full aspect-[2/3] object-cover" data-testid="main-image" />
             </div>
           </div>
 
