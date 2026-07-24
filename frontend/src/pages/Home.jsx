@@ -21,7 +21,7 @@ const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Biodegradable
 export default function Home() {
   const [products, setProducts] = useState([]);
 
-  useEffect(() => { getProducts({ tag: "Best Seller" }).then(setProducts).catch(() => {}); }, []);
+  useEffect(() => { getProducts({ sort: "featured" }).then(setProducts).catch(() => {}); }, []);
 
   return (
     <div>
@@ -29,14 +29,14 @@ export default function Home() {
       <section className="container pt-6">
         <div className="relative rounded-[4px] overflow-hidden">
           <img src={HERO} alt="Curated collections" className="w-full h-[460px] md:h-[560px] object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/45 to-transparent" />
           <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 max-w-2xl">
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
               className="text-cream/80 text-[12px] tracking-[0.25em] uppercase mb-4">Shop All</motion.p>
             <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
               className="font-display text-cream text-5xl md:text-7xl leading-[0.95]">Explore Our<br />Curated Collections</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.3 }}
-              className="text-cream/75 mt-5 max-w-md text-[15px]">From skincare essentials to beauty must-haves, discover everything you need to elevate your routine.</motion.p>
+              className="text-cream/90 mt-5 max-w-md text-[15px]">From skincare essentials to beauty must-haves, discover everything you need to elevate your routine.</motion.p>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.45 }}>
               <Link to="/shop" data-testid="hero-cta"
                 className="inline-flex items-center gap-2 mt-8 bg-cream text-ink px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-paper transition-colors group w-fit">
