@@ -4,7 +4,7 @@ import PolicyLayout from "../components/PolicyLayout";
 const sections = [
   { title: "About Us", blocks: [
     "Oblic Cosmetic is a luxury cosmetic brand based in Surat, Gujarat, India. We manufacture and sell skincare, makeup, and haircare products. Our registered address is:",
-    "314, The Gallery Business Hub 2, Near Mahaveer Chowk, Yogi Chowk, Surat, Gujarat - 395010",
+    "314, The Gellery Business Hub 2, Near Mahaveer Chowk, Yogichowk, Surat, Gujarat - 395011",
     "Email: Obliccosmetics@gmail.com",
   ]},
   { title: "Acceptance of Terms", blocks: [

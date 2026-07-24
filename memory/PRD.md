@@ -12,18 +12,21 @@ User wanted to redesign their cosmetics website to match reference images of "Lu
 Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 
 ## Implemented (2026-06)
-- Rebranded to **Oblic** (logo extracted from client PDF, transparent PNG in navbar/footer/mobile menu)
-- **3 real products only** with accurate label details + generated high-res brandless product photos:
-  - Rosemary Methi Shampoo (Haircare, 200ml) — ₹320 (MRP ₹400)
-  - Fenugreek Hair Oil (Haircare, 100ml) — ₹180 (MRP ₹225)
-  - Niacinamide Face Serum (Skincare, 30ml) — ₹540 (MRP ₹675)
-- Pricing fully in **INR (₹)** across cards/detail/cart/checkout; free shipping over ₹999; "Made in India" messaging
-- Upcoming categories (Makeup, Fragrances, Bodycare) shown as creative **"Coming Soon"** tiles (home) and disabled "SOON" filters (shop)
-- Clean brandless hero image (no fake labels)
-- Home: hero, marquee, best-sellers (3), category grid w/ coming-soon, editorial, FAQ
-- Shop: category filters + coming-soon, on-sale, sort, result count
-- Product Detail, Cart drawer, Checkout, Newsletter, Reviews — all functional
-- Tested earlier: backend 100%, frontend 100%
+- Rebranded to **Oblic** (logo from client PDF)
+- 3 real products (Rosemary Methi Shampoo ₹320, Fenugreek Hair Oil ₹180, Niacinamide Face Serum ₹540) with client photos on neutral studio bg; each product gallery = [product, relevant lifestyle, PDF label detail]
+- INR (₹) pricing; FREE shipping across India on all orders (checkout shipping=0)
+- Product cards/detail use aspect-[2/3] object-cover (no crop)
+- **About page** (/about): story + Address, WhatsApp (+91 7623067169, wa.me/917623067169), Instagram (@oblic_cosmetics)
+- Footer: Facebook + Instagram only (both -> Instagram); address + WhatsApp; all column links functional
+- **Legal pages**: /terms, /refund-policy, /shipping-policy (text from client HTML, rendered via PolicyLayout)
+- Checkout -> Instamojo hosted payment link redirect
+- All long dashes (em/en) removed site-wide
+- Tested: iteration_1/2/3 all frontend 100%
+
+## Backlog / Next
+- Instamojo full API integration (needs API keys) for auto amount + payment confirmation
+- Add products as Makeup/Fragrances/Bodycare launch
+- P2: user accounts, order history, wishlist, search bar, floating WhatsApp button
 
 ## Backlog / Next
 - Instamojo: currently a hosted payment-LINK redirect to https://www.instamojo.com/@obliccosmetics/ (order created as record, then user pays on Instamojo, quoting order number). Full API integration (auto amount + payment confirmation/webhook) requires Instamojo API keys.
