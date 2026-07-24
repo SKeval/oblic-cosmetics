@@ -33,7 +33,7 @@ export default function Footer() {
             <p className="text-[12px] tracking-[0.2em] uppercase opacity-70 mb-3">Thoughtfully Curated Gifts</p>
             <h3 className="font-display text-4xl md:text-5xl leading-[1.05]">Enjoy 10% Off<br />Your First Order</h3>
             <p className="mt-4 text-cream/70 max-w-md text-[15px]">
-              Sign up and receive an exclusive discount code for your first purchase. Join Lumina and elevate your beauty ritual.
+              Sign up and receive an exclusive discount code for your first purchase. Join Oblic and elevate your beauty ritual.
             </p>
           </div>
           <form onSubmit={submit} className="md:justify-self-end w-full max-w-md" data-testid="newsletter-form">
@@ -59,8 +59,8 @@ export default function Footer() {
       <div className="bg-cream-deep">
         <div className="container py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
-            <span className="font-display text-3xl">Lumina</span>
-            <p className="text-ink-soft text-[14px] mt-4 max-w-xs">Clean, considered beauty for the everyday ritual.</p>
+            <img src="/oblic-logo.png" alt="Oblic" className="h-8 w-auto" />
+            <p className="text-ink-soft text-[14px] mt-4 max-w-xs">Clean, considered beauty for the everyday ritual — crafted in India.</p>
             <div className="flex gap-3 mt-6">
               {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
                 <a key={i} href="#" className="w-9 h-9 rounded-full border border-ink/20 flex items-center justify-center hover:bg-plum hover:text-cream hover:border-plum transition-colors">
@@ -81,7 +81,7 @@ export default function Footer() {
           ))}
         </div>
         <div className="container border-t border-line py-6 flex flex-col sm:flex-row justify-between gap-3 text-[13px] text-muted">
-          <span>© {new Date().getFullYear()} Lumina. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Oblic. All rights reserved.</span>
           <span>Privacy · Terms · Shipping</span>
         </div>
       </div>

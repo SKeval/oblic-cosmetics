@@ -54,9 +54,9 @@ export default function ProductCard({ product, index = 0 }) {
         </Link>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-[15px]">${product.price.toFixed(0)}</span>
+            <span className="text-[15px]">₹{product.price.toFixed(0)}</span>
             {product.compare_at_price && (
-              <span className="text-[13px] text-muted line-through">${product.compare_at_price.toFixed(0)}</span>
+              <span className="text-[13px] text-muted line-through">₹{product.compare_at_price.toFixed(0)}</span>
             )}
           </div>
           <div className="flex items-center gap-1.5">

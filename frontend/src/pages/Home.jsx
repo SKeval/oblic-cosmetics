@@ -16,7 +16,7 @@ const CATS = [
   { name: "Makeup", img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
 
-const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Biodegradable Ingredients", "Clean Formulas", "Free Shipping Over $100"];
+const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Paraben & Sulphate Free", "Made in India", "Free Shipping Over ₹999"];
 
 export default function Home() {
   const [products, setProducts] = useState([]);

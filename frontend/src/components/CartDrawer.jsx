@@ -49,7 +49,7 @@ export default function CartDrawer() {
                             <span className="w-7 text-center text-[13px]">{i.qty}</span>
                             <button onClick={() => updateQty(i.key, i.qty + 1)} className="p-1.5" aria-label="Increase"><Plus size={13} /></button>
                           </div>
-                          <span className="text-[14px]">${(i.price * i.qty).toFixed(2)}</span>
+                          <span className="text-[14px]">₹{(i.price * i.qty).toFixed(0)}</span>
                         </div>
                       </div>
                       <button onClick={() => removeItem(i.key)} className="text-muted hover:text-ink self-start" aria-label="Remove"><X size={16} /></button>
@@ -59,7 +59,7 @@ export default function CartDrawer() {
                 <div className="p-6 border-t border-line space-y-4">
                   <div className="flex justify-between text-[15px]">
                     <span className="text-ink-soft">Subtotal</span>
-                    <span className="font-display text-xl">${subtotal.toFixed(2)}</span>
+                    <span className="font-display text-xl">₹{subtotal.toFixed(0)}</span>
                   </div>
                   <button
                     onClick={() => { setOpen(false); navigate("/checkout"); }}

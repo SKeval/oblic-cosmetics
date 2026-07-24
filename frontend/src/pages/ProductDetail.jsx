@@ -86,10 +86,10 @@ export default function ProductDetail() {
               <span className="text-[13px] text-muted">{product.review_count} reviews</span>
             </div>
             <div className="flex items-center gap-3 mt-4">
-              <span className="text-2xl" data-testid="product-price">${product.price.toFixed(2)}</span>
+              <span className="text-2xl" data-testid="product-price">₹{product.price.toFixed(0)}</span>
               {product.compare_at_price && (
                 <>
-                  <span className="text-muted line-through text-[15px]">${product.compare_at_price.toFixed(2)}</span>
+                  <span className="text-muted line-through text-[15px]">₹{product.compare_at_price.toFixed(0)}</span>
                   <span className="bg-sage text-ink text-[12px] px-2.5 py-1 rounded-full">{Math.round((1 - product.price / product.compare_at_price) * 100)}% Off</span>
                 </>
               )}

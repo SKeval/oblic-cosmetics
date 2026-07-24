@@ -19,13 +19,13 @@ export default function Navbar() {
   return (
     <>
       <div className="bg-plum text-cream text-center text-[12px] tracking-[0.15em] uppercase py-2.5 px-4" data-testid="announcement-bar">
-        Free domestic shipping on orders over $100
+        Free shipping across India on orders over ₹999
       </div>
       <header className="sticky top-0 z-40 bg-paper/90 backdrop-blur-md border-b border-line">
         <div className="container flex items-center justify-between h-[72px]">
           <div className="flex items-center gap-10">
-            <Link to="/" className="font-display text-[26px] tracking-tightest leading-none" data-testid="logo-link">
-              Lumina
+            <Link to="/" className="flex items-center" data-testid="logo-link">
+              <img src="/oblic-logo.png" alt="Oblic" className="h-7 md:h-8 w-auto" />
             </Link>
             <nav className="hidden lg:flex items-center gap-7">
               {NAV.map((n) => (
@@ -67,7 +67,7 @@ export default function Navbar() {
       {mobile && (
         <div className="fixed inset-0 z-50 bg-paper lg:hidden anim-fade-in" data-testid="mobile-menu">
           <div className="container flex items-center justify-between h-[72px] border-b border-line">
-            <span className="font-display text-2xl">Lumina</span>
+            <img src="/oblic-logo.png" alt="Oblic" className="h-7 w-auto" />
             <button onClick={() => setMobile(false)} aria-label="Close menu"><X size={24} /></button>
           </div>
           <nav className="flex flex-col p-6 gap-1">

@@ -10,7 +10,7 @@ export default function Checkout() {
   const [form, setForm] = useState({ name: "", email: "", address: "" });
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
-  const shipping = subtotal >= 100 || subtotal === 0 ? 0 : 8;
+  const shipping = subtotal >= 999 || subtotal === 0 ? 0 : 59;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -29,7 +29,7 @@ export default function Checkout() {
         <CheckCircle2 size={52} className="mx-auto text-sage-deep" strokeWidth={1.3} />
         <h1 className="font-display text-4xl mt-6">Thank you, {order.name.split(" ")[0]}!</h1>
         <p className="text-ink-soft mt-3">Your order <span className="font-medium">#{order.order_number}</span> is confirmed. A receipt has been sent to {order.email}.</p>
-        <p className="font-display text-2xl mt-6">Total: ${order.total.toFixed(2)}</p>
+        <p className="font-display text-2xl mt-6">Total: ₹{order.total.toFixed(0)}</p>
         <Link to="/shop" className="inline-block mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
       </div>
     );
@@ -65,15 +65,15 @@ export default function Checkout() {
                     <p className="font-display text-[16px] leading-tight">{i.name}</p>
                     <p className="text-muted text-[12px]">{i.size} · Qty {i.qty}</p>
                   </div>
-                  <span className="text-[14px]">${(i.price * i.qty).toFixed(2)}</span>
+                  <span className="text-[14px]">₹{(i.price * i.qty).toFixed(0)}</span>
                 </div>
               ))}
             </div>
           )}
           <div className="border-t border-line mt-6 pt-4 space-y-2 text-[14px]">
-            <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-ink-soft">Shipping</span><span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span></div>
-            <div className="flex justify-between font-display text-xl pt-2"><span>Total</span><span>${(subtotal + shipping).toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>₹{subtotal.toFixed(0)}</span></div>
+            <div className="flex justify-between"><span className="text-ink-soft">Shipping</span><span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(0)}`}</span></div>
+            <div className="flex justify-between font-display text-xl pt-2"><span>Total</span><span>₹{(subtotal + shipping).toFixed(0)}</span></div>
           </div>
         </div>
       </div>
