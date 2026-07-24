@@ -6,11 +6,15 @@ SHAMPOO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-
 OIL = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/8b4aed20ca4530a78f80f8e3429d6fbfcb394327080d72a8804da694aba44f15.jpeg"
 SERUM = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ea440177fda1ce339730408c4835940fb25ebeb5c4907431406699e0fbe315e5.jpeg"
 
-# Supporting lifestyle / texture imagery
-TEX = "https://images.unsplash.com/photo-1659007747376-3811b34e458f?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
-L1 = "https://images.unsplash.com/photo-1670201203208-055d6d79db4a?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
-L2 = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
-L3 = "https://images.unsplash.com/photo-1586220742613-b731f66f7743?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
+# Relevant lifestyle imagery
+HAIR1 = "https://images.unsplash.com/photo-1564141696939-9eb6e957ccfc?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"
+HAIR2 = "https://images.pexels.com/photos/8484212/pexels-photo-8484212.jpeg?auto=compress&cs=tinysrgb&w=1000"
+SERUMLIFE = "https://images.pexels.com/photos/33794143/pexels-photo-33794143.jpeg?auto=compress&cs=tinysrgb&w=1000"
+
+# PDF label detail crops (served from frontend /public)
+SHAMPOO_DETAIL = "/shampoo-detail.jpg"
+OIL_DETAIL = "/oil-detail.jpg"
+SERUM_DETAIL = "/serum-detail.jpg"
 
 
 def _p(**kw):
@@ -28,7 +32,7 @@ PRODUCTS = [
         price=320.0,
         compare_at_price=400.0,
         on_sale=True,
-        images=[SHAMPOO, L3, TEX],
+        images=[SHAMPOO, HAIR1, SHAMPOO_DETAIL],
         badges=["Best Seller"],
         featured_rank=1,
         rating=4.9,
@@ -48,7 +52,7 @@ PRODUCTS = [
         price=180.0,
         compare_at_price=225.0,
         on_sale=True,
-        images=[OIL, L1, TEX],
+        images=[OIL, HAIR2, OIL_DETAIL],
         badges=["Best Seller"],
         featured_rank=2,
         rating=4.8,
@@ -68,7 +72,7 @@ PRODUCTS = [
         price=540.0,
         compare_at_price=675.0,
         on_sale=True,
-        images=[SERUM, L2, TEX],
+        images=[SERUM, SERUMLIFE, SERUM_DETAIL],
         badges=["New"],
         featured_rank=3,
         rating=4.9,
