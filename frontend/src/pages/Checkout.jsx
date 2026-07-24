@@ -12,7 +12,7 @@ export default function Checkout() {
   const [form, setForm] = useState({ name: "", email: "", address: "" });
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
-  const shipping = subtotal >= 999 || subtotal === 0 ? 0 : 59;
+  const shipping = 0;
 
   const submit = async (e) => {
     e.preventDefault();

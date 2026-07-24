@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { subscribe } from "../api";
-import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
+import { Facebook, Instagram, MapPin, MessageCircle } from "lucide-react";
+import { ADDRESS, WHATSAPP_DISPLAY, WHATSAPP_LINK, INSTAGRAM_LINK, MAPS_LINK } from "../pages/About";
 
 const COLS = [
   { title: "Shop", links: ["Shop All", "Bundle", "Sale", "Gifts", "Membership"] },
@@ -61,12 +62,21 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <img src="/oblic-logo.png" alt="Oblic" className="h-8 w-auto" />
             <p className="text-ink-soft text-[14px] mt-4 max-w-xs">Clean, considered beauty for the everyday ritual — crafted in India.</p>
+            <a href={MAPS_LINK} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 mt-5 text-[13.5px] text-ink-soft hover:text-ink transition-colors max-w-xs" data-testid="footer-address">
+              <MapPin size={16} strokeWidth={1.6} className="mt-0.5 shrink-0" /> <span>{ADDRESS}</span>
+            </a>
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mt-3 text-[13.5px] text-ink-soft hover:text-ink transition-colors" data-testid="footer-whatsapp">
+              <MessageCircle size={16} strokeWidth={1.6} /> {WHATSAPP_DISPLAY}
+            </a>
             <div className="flex gap-3 mt-6">
-              {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 rounded-full border border-ink/20 flex items-center justify-center hover:bg-plum hover:text-cream hover:border-plum transition-colors">
-                  <Icon size={15} strokeWidth={1.6} />
-                </a>
-              ))}
+              <a href={INSTAGRAM_LINK} target="_blank" rel="noopener noreferrer" aria-label="Facebook" data-testid="footer-facebook"
+                className="w-9 h-9 rounded-full border border-ink/20 flex items-center justify-center hover:bg-plum hover:text-cream hover:border-plum transition-colors">
+                <Facebook size={15} strokeWidth={1.6} />
+              </a>
+              <a href={INSTAGRAM_LINK} target="_blank" rel="noopener noreferrer" aria-label="Instagram" data-testid="footer-instagram"
+                className="w-9 h-9 rounded-full border border-ink/20 flex items-center justify-center hover:bg-plum hover:text-cream hover:border-plum transition-colors">
+                <Instagram size={15} strokeWidth={1.6} />
+              </a>
             </div>
           </div>
           {COLS.map((c) => (

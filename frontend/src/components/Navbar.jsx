@@ -8,7 +8,7 @@ const NAV = [
   { label: "Brands", to: "/shop" },
   { label: "Offers", to: "/shop?on_sale=true" },
   { label: "Blog", to: "/shop" },
-  { label: "About", to: "/shop" },
+  { label: "About", to: "/about" },
 ];
 
 export default function Navbar() {
@@ -19,7 +19,7 @@ export default function Navbar() {
   return (
     <>
       <div className="bg-plum text-cream text-center text-[12px] tracking-[0.15em] uppercase py-2.5 px-4" data-testid="announcement-bar">
-        Free shipping across India on orders over ₹999
+        Free shipping across India on all orders
       </div>
       <header className="sticky top-0 z-40 bg-paper/90 backdrop-blur-md border-b border-line">
         <div className="container flex items-center justify-between h-[72px]">

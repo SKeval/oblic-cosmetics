@@ -130,5 +130,5 @@ FAQS = [
     {"id": str(uuid.uuid4()), "order": 4, "question": "How do I know which product is right for me?",
      "answer": "Each product page lists the concerns it addresses and how to use it. You can also reach our team via chat for a personalised recommendation."},
     {"id": str(uuid.uuid4()), "order": 5, "question": "Do you ship across India?",
-     "answer": "Yes, we ship pan-India. Enjoy free shipping on all orders over ₹999, with fast and reliable delivery to your doorstep."},
+     "answer": "Yes, we ship pan-India with fast and reliable delivery to your doorstep — and shipping is completely FREE on all orders, all across India."},
 ]

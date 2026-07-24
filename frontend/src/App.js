@@ -9,6 +9,7 @@ import Home from "@/pages/Home";
 import Shop from "@/pages/Shop";
 import ProductDetail from "@/pages/ProductDetail";
 import Checkout from "@/pages/Checkout";
+import About from "@/pages/About";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </main>
         <Footer />
