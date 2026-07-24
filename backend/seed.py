@@ -2,9 +2,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 # Generated high-res Oblic product photos (no visible branding)
-SHAMPOO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7ddb019425390a554babe3d899cbff7e90949009695ec7d2d03623ffd9b99a03.jpeg"
-OIL = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/26faf8360324793976f25b5f201d7f7eca3931cb19534d81b7e7a03091915904.jpeg"
-SERUM = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d7ac2a6d14fb56c907236c1d551f8fbe71a6abe82272399a26542c7beaf630ed.jpeg"
+SHAMPOO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d546d6b209115ab4b1fbc5f83b178b9359a01b42e7d49484b53250463133bf30.jpeg"
+OIL = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/674bef416a0fcb5ddefca8937455ef845869db386f53db32df2fd97970beb108.jpeg"
+SERUM = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ecff02e89954433ca3e3c6446ed3f60a9ec55e389b5647097c9a1d991178a5e0.jpeg"
 
 # Supporting lifestyle / texture imagery
 TEX = "https://images.unsplash.com/photo-1659007747376-3811b34e458f?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000"

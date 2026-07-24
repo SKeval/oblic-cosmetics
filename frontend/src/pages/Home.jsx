@@ -10,8 +10,8 @@ const HERO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d7ac2a6d14fb56c907236c1d551f8fbe71a6abe82272399a26542c7beaf630ed.jpeg" },
-  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7ddb019425390a554babe3d899cbff7e90949009695ec7d2d03623ffd9b99a03.jpeg" },
+  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ecff02e89954433ca3e3c6446ed3f60a9ec55e389b5647097c9a1d991178a5e0.jpeg" },
+  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/d546d6b209115ab4b1fbc5f83b178b9359a01b42e7d49484b53250463133bf30.jpeg" },
   { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
