@@ -1,45 +1,88 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle2, ArrowLeft, ExternalLink } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { createOrder } from "../api";
-
-const INSTAMOJO_URL = "https://www.instamojo.com/@obliccosmetics/";
+import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript } from "../api";
 
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", address: "" });
-  const [order, setOrder] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", contact: "", address: "" });
+  const [paidOrder, setPaidOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [gatewayEnabled, setGatewayEnabled] = useState(true);
   const shipping = 0;
+  const total = subtotal + shipping;
+
+  useEffect(() => {
+    loadRazorpayScript();
+    getPaymentConfig().then((c) => setGatewayEnabled(c.enabled)).catch(() => setGatewayEnabled(false));
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
+    setError("");
     if (!form.name || !form.email || items.length === 0) return;
+
     setLoading(true);
     try {
-      const res = await createOrder({ items: items.map((i) => ({ product_id: i.product_id, name: i.name, price: i.price, size: i.size, image: i.image, qty: i.qty })), ...form });
-      setOrder(res);
-      clear();
-    } finally { setLoading(false); }
+      const ok = await loadRazorpayScript();
+      if (!ok) { setError("Could not load the payment gateway. Please check your connection and retry."); return; }
+
+      const payload = {
+        items: items.map((i) => ({ product_id: i.product_id, name: i.name, price: i.price, size: i.size, image: i.image, qty: i.qty })),
+        name: form.name, email: form.email, address: form.address, contact: form.contact,
+      };
+      const data = await createRazorpayOrder(payload);
+
+      const options = {
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        name: "Oblic",
+        description: `Order ${data.order_number}`,
+        order_id: data.razorpay_order_id,
+        prefill: { name: form.name, email: form.email, contact: form.contact },
+        notes: { order_number: data.order_number },
+        theme: { color: "#2E2438" },
+        handler: async (response) => {
+          try {
+            const res = await verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setPaidOrder(res.order || { order_number: data.order_number, name: form.name, email: form.email, total: data.total });
+            clear();
+          } catch {
+            setError("Payment was received but could not be verified. Please contact support with your payment reference.");
+          }
+        },
+        modal: { ondismiss: () => setLoading(false) },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (resp) => {
+        setError(resp?.error?.description || "Payment failed. Please try again.");
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "Something went wrong starting the payment. Please try again.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (order) {
+  if (paidOrder) {
     return (
       <div className="container py-28 text-center max-w-lg" data-testid="order-confirmation">
         <CheckCircle2 size={52} className="mx-auto text-sage-deep" strokeWidth={1.3} />
-        <h1 className="font-display text-4xl mt-6">Almost there, {order.name.split(" ")[0]}!</h1>
-        <p className="text-ink-soft mt-3">Your order <span className="font-medium">#{order.order_number}</span> has been placed. Complete your secure payment via Instamojo to confirm it.</p>
-        <p className="font-display text-2xl mt-6">Amount to pay: ₹{order.total.toFixed(0)}</p>
-        <a href={INSTAMOJO_URL} target="_blank" rel="noopener noreferrer" data-testid="pay-instamojo-btn"
-          className="inline-flex items-center gap-2 mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">
-          Pay ₹{order.total.toFixed(0)} on Instamojo <ExternalLink size={15} />
-        </a>
-        <div className="mt-5">
-          <Link to="/shop" className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Continue shopping</Link>
-        </div>
-        <p className="text-[12px] text-muted mt-6 max-w-sm mx-auto">You'll be redirected to Oblic's secure Instamojo page. Please mention your order number <span className="font-medium">#{order.order_number}</span> during payment.</p>
+        <h1 className="font-display text-4xl mt-6">Thank you, {paidOrder.name?.split(" ")[0] || "friend"}!</h1>
+        <p className="text-ink-soft mt-3">Your payment was successful and order <span className="font-medium">#{paidOrder.order_number}</span> is confirmed. A confirmation has been sent to {paidOrder.email}.</p>
+        <p className="font-display text-2xl mt-6">Paid: ₹{Number(paidOrder.total).toFixed(0)}</p>
+        <Link to="/shop" className="inline-block mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
       </div>
     );
   }
@@ -55,13 +98,29 @@ export default function Checkout() {
             data-testid="checkout-name" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />
           <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email address"
             data-testid="checkout-email" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />
+          <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Mobile number" inputMode="tel"
+            data-testid="checkout-contact" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />
           <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Shipping address" rows={3}
             data-testid="checkout-address" className="w-full bg-paper border border-line rounded-[20px] px-5 py-3.5 outline-none focus:border-ink resize-none" />
-          <button type="submit" disabled={loading || items.length === 0} data-testid="place-order-btn"
+
+          {!gatewayEnabled && (
+            <div className="flex items-start gap-2 bg-cream-deep border border-line rounded-[14px] p-4 text-[13.5px] text-ink-soft" data-testid="gateway-disabled-note">
+              <AlertCircle size={17} className="shrink-0 mt-0.5" />
+              <span>Online payment is not active yet. Add your Razorpay API keys to enable secure card, UPI and netbanking payments.</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-[14px] p-4 text-[13.5px] text-red-700" data-testid="checkout-error">
+              <AlertCircle size={17} className="shrink-0 mt-0.5" /> <span>{error}</span>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading || items.length === 0 || !gatewayEnabled} data-testid="place-order-btn"
             className="w-full bg-plum text-cream py-4 rounded-full text-[13px] tracking-[0.14em] uppercase hover:bg-ink transition-colors disabled:opacity-50">
-            {loading ? "Processing…" : "Proceed to Payment"}
+            {loading ? "Processing…" : `Pay ₹${total.toFixed(0)}`}
           </button>
-          <p className="text-[12px] text-muted text-center">Secure payment powered by Instamojo · UPI, Cards & Netbanking</p>
+          <p className="flex items-center justify-center gap-1.5 text-[12px] text-muted"><ShieldCheck size={14} /> Secure payment powered by Razorpay · UPI, Cards & Netbanking</p>
         </form>
 
         <div className="bg-cream-deep/50 rounded-[3px] p-6 h-fit">
@@ -83,7 +142,7 @@ export default function Checkout() {
           <div className="border-t border-line mt-6 pt-4 space-y-2 text-[14px]">
             <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>₹{subtotal.toFixed(0)}</span></div>
             <div className="flex justify-between"><span className="text-ink-soft">Shipping</span><span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(0)}`}</span></div>
-            <div className="flex justify-between font-display text-xl pt-2"><span>Total</span><span>₹{(subtotal + shipping).toFixed(0)}</span></div>
+            <div className="flex justify-between font-display text-xl pt-2"><span>Total</span><span>₹{total.toFixed(0)}</span></div>
           </div>
         </div>
       </div>

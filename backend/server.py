@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
+import razorpay
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -16,6 +17,13 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+razorpay_client = (
+    razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET else None
+)
 
 app = FastAPI(title="Lumina API")
 api_router = APIRouter(prefix="/api")
@@ -63,6 +71,20 @@ class OrderCreate(BaseModel):
     email: EmailStr
     name: str
     address: Optional[str] = ""
+
+
+class RazorpayOrderCreate(BaseModel):
+    items: List[CartItem]
+    email: EmailStr
+    name: str
+    address: Optional[str] = ""
+    contact: Optional[str] = ""
+
+
+class RazorpayVerify(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
 
 
 # ---------- Routes ----------
@@ -173,6 +195,93 @@ async def create_order(payload: OrderCreate):
     await db.orders.insert_one({k: v for k, v in order.items()})
     order.pop("_id", None)
     return order
+
+
+# ---------- Razorpay Payments ----------
+@api_router.get("/payments/config")
+async def payments_config():
+    return {"enabled": razorpay_client is not None, "key_id": RAZORPAY_KEY_ID}
+
+
+@api_router.post("/payments/razorpay/order")
+async def create_razorpay_order(payload: RazorpayOrderCreate):
+    if razorpay_client is None:
+        raise HTTPException(status_code=503, detail="Payment gateway not configured. Please add Razorpay API keys.")
+    if not payload.items:
+        raise HTTPException(status_code=400, detail="Cart is empty")
+
+    total = round(sum(i.price * i.qty for i in payload.items), 2)
+    amount_paise = int(round(total * 100))
+    order_number = "OBL" + str(uuid.uuid4().int)[:8]
+
+    try:
+        rzp_order = razorpay_client.order.create({
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": order_number,
+            "payment_capture": 1,
+            "notes": {"customer": payload.name, "email": payload.email},
+        })
+    except Exception as e:
+        logger.error(f"Razorpay order create failed: {e}")
+        raise HTTPException(status_code=502, detail="Could not create payment order. Check Razorpay keys.")
+
+    order = {
+        "id": str(uuid.uuid4()),
+        "order_number": order_number,
+        "razorpay_order_id": rzp_order["id"],
+        "items": [i.model_dump() for i in payload.items],
+        "email": payload.email,
+        "name": payload.name,
+        "address": payload.address,
+        "contact": payload.contact,
+        "total": total,
+        "status": "created",
+        "created_at": now_iso(),
+    }
+    await db.orders.insert_one({k: v for k, v in order.items()})
+
+    return {
+        "razorpay_order_id": rzp_order["id"],
+        "amount": amount_paise,
+        "currency": "INR",
+        "key_id": RAZORPAY_KEY_ID,
+        "order_number": order_number,
+        "order_id": order["id"],
+        "name": payload.name,
+        "email": payload.email,
+        "contact": payload.contact,
+        "total": total,
+    }
+
+
+@api_router.post("/payments/razorpay/verify")
+async def verify_razorpay(payload: RazorpayVerify):
+    if razorpay_client is None:
+        raise HTTPException(status_code=503, detail="Payment gateway not configured.")
+    try:
+        razorpay_client.utility.verify_payment_signature({
+            "razorpay_order_id": payload.razorpay_order_id,
+            "razorpay_payment_id": payload.razorpay_payment_id,
+            "razorpay_signature": payload.razorpay_signature,
+        })
+    except Exception:
+        await db.orders.update_one(
+            {"razorpay_order_id": payload.razorpay_order_id},
+            {"$set": {"status": "verification_failed"}},
+        )
+        raise HTTPException(status_code=400, detail="Payment verification failed")
+
+    await db.orders.update_one(
+        {"razorpay_order_id": payload.razorpay_order_id},
+        {"$set": {
+            "status": "paid",
+            "razorpay_payment_id": payload.razorpay_payment_id,
+            "paid_at": now_iso(),
+        }},
+    )
+    order = await db.orders.find_one({"razorpay_order_id": payload.razorpay_order_id}, {"_id": 0})
+    return {"status": "paid", "order": order}
 
 
 app.include_router(api_router)

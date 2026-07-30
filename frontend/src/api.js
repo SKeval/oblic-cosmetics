@@ -13,5 +13,19 @@ export const addReview = (id, data) => api.post(`/products/${id}/reviews`, data)
 export const getFaqs = () => api.get("/faqs").then((r) => r.data);
 export const subscribe = (email) => api.post("/newsletter", { email }).then((r) => r.data);
 export const createOrder = (data) => api.post("/orders", data).then((r) => r.data);
+export const getPaymentConfig = () => api.get("/payments/config").then((r) => r.data);
+export const createRazorpayOrder = (data) => api.post("/payments/razorpay/order", data).then((r) => r.data);
+export const verifyRazorpayPayment = (data) => api.post("/payments/razorpay/verify", data).then((r) => r.data);
+
+export function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default api;
