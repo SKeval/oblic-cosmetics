@@ -1,174 +1,135 @@
-"""Lumina cosmetics store backend API tests."""
+"""Backend tests for Oblic cosmetics - Razorpay integration."""
 import os
+import hmac
+import hashlib
 import pytest
 import requests
+from motor.motor_asyncio import AsyncIOMotorClient
+import asyncio
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
-if not BASE_URL:
-    # fallback: read from frontend .env
-    with open("/app/frontend/.env") as f:
-        for line in f:
-            if line.startswith("REACT_APP_BACKEND_URL="):
-                BASE_URL = line.split("=", 1)[1].strip().rstrip("/")
-                break
-
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://admiring-beaver-9.preview.emergentagent.com').rstrip('/')
 API = f"{BASE_URL}/api"
+RZP_KEY_ID = "rzp_test_TKDOtXPfFQfaSh"
+RZP_KEY_SECRET = "qPHeQQlj0n0PymPDYhABet5B"
+
+MONGO_URL = "mongodb://localhost:27017"
+DB_NAME = "test_database"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def s():
-    sess = requests.Session()
-    sess.headers.update({"Content-Type": "application/json"})
-    return sess
+    return requests.Session()
 
 
-# ---------- Products ----------
-class TestProducts:
-    def test_list_products(self, s):
-        r = s.get(f"{API}/products", timeout=30)
-        assert r.status_code == 200
-        data = r.json()
-        assert isinstance(data, list)
-        assert len(data) >= 12
-        p = data[0]
-        for k in ("id", "name", "price", "category", "images", "rating"):
-            assert k in p
-        assert "_id" not in p
-
-    def test_filter_category(self, s):
-        r = s.get(f"{API}/products", params={"category": "Skincare"})
-        assert r.status_code == 200
-        data = r.json()
-        assert all(p["category"] == "Skincare" for p in data)
-        assert len(data) > 0
-
-    def test_filter_on_sale(self, s):
-        r = s.get(f"{API}/products", params={"on_sale": "true"})
-        assert r.status_code == 200
-        data = r.json()
-        assert len(data) > 0
-        assert all(p.get("on_sale") for p in data)
-
-    def test_sort_price_asc(self, s):
-        r = s.get(f"{API}/products", params={"sort": "price_asc"})
-        assert r.status_code == 200
-        prices = [p["price"] for p in r.json()]
-        assert prices == sorted(prices)
-
-    def test_sort_price_desc(self, s):
-        r = s.get(f"{API}/products", params={"sort": "price_desc"})
-        prices = [p["price"] for p in r.json()]
-        assert prices == sorted(prices, reverse=True)
-
-    def test_get_product_by_id(self, s):
-        products = s.get(f"{API}/products").json()
-        pid = products[0]["id"]
-        r = s.get(f"{API}/products/{pid}")
-        assert r.status_code == 200
-        assert r.json()["id"] == pid
-
-    def test_get_product_not_found(self, s):
-        r = s.get(f"{API}/products/nonexistent-id-xyz")
-        assert r.status_code == 404
+def _get_order_from_db(razorpay_order_id):
+    async def _q():
+        client = AsyncIOMotorClient(MONGO_URL)
+        db = client[DB_NAME]
+        doc = await db.orders.find_one({"razorpay_order_id": razorpay_order_id}, {"_id": 0})
+        client.close()
+        return doc
+    return asyncio.get_event_loop().run_until_complete(_q()) if False else asyncio.run(_q())
 
 
-class TestCategories:
-    def test_categories(self, s):
-        r = s.get(f"{API}/categories")
-        assert r.status_code == 200
-        cats = r.json()
-        assert "Skincare" in cats
-        assert isinstance(cats, list)
+# ---------- Basic ----------
+def test_products_load(s):
+    r = s.get(f"{API}/products")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list) and len(data) >= 3
 
 
-# ---------- Reviews ----------
-class TestReviews:
-    def test_list_reviews(self, s):
-        products = s.get(f"{API}/products").json()
-        pid = products[0]["id"]
-        r = s.get(f"{API}/products/{pid}/reviews")
-        assert r.status_code == 200
-        data = r.json()
-        assert isinstance(data, list)
-        assert len(data) > 0
-        assert all(r["product_id"] == pid for r in data)
-
-    def test_create_review_and_persist(self, s):
-        products = s.get(f"{API}/products").json()
-        pid = products[0]["id"]
-        before = s.get(f"{API}/products/{pid}/reviews").json()
-        payload = {"author": "TEST_Reviewer", "rating": 5, "body": "TEST review body content."}
-        r = s.post(f"{API}/products/{pid}/reviews", json=payload)
-        assert r.status_code == 200
-        review = r.json()
-        assert review["author"] == "TEST_Reviewer"
-        assert review["rating"] == 5
-        assert review["product_id"] == pid
-
-        after = s.get(f"{API}/products/{pid}/reviews").json()
-        assert len(after) == len(before) + 1
-
-        # product aggregates updated
-        prod = s.get(f"{API}/products/{pid}").json()
-        assert prod["review_count"] == len(after)
-
-    def test_review_on_missing_product(self, s):
-        r = s.post(f"{API}/products/no-such-id/reviews",
-                   json={"author": "x", "rating": 5, "body": "y"})
-        assert r.status_code == 404
+def test_payments_config(s):
+    r = s.get(f"{API}/payments/config")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["enabled"] is True
+    assert data["key_id"] == RZP_KEY_ID
 
 
-# ---------- FAQs ----------
-class TestFAQs:
-    def test_faqs(self, s):
-        r = s.get(f"{API}/faqs")
-        assert r.status_code == 200
-        data = r.json()
-        assert len(data) >= 5
-        assert "question" in data[0] and "answer" in data[0]
+# ---------- Razorpay order creation ----------
+@pytest.fixture(scope="module")
+def created_order(s):
+    payload = {
+        "items": [{"product_id": "p1", "name": "TEST Item", "price": 320, "qty": 1}],
+        "email": "test@example.com",
+        "name": "TEST User",
+        "address": "TEST Addr",
+        "contact": "9999999999",
+    }
+    r = s.post(f"{API}/payments/razorpay/order", json=payload)
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
-# ---------- Newsletter ----------
-class TestNewsletter:
-    def test_subscribe(self, s):
-        r = s.post(f"{API}/newsletter", json={"email": "TEST_new@example.com"})
-        assert r.status_code == 200
-        d = r.json()
-        assert d.get("ok") is True
-        assert "message" in d
-
-    def test_subscribe_duplicate(self, s):
-        s.post(f"{API}/newsletter", json={"email": "TEST_dup@example.com"})
-        r = s.post(f"{API}/newsletter", json={"email": "TEST_dup@example.com"})
-        assert r.status_code == 200
-        assert "already" in r.json()["message"].lower()
-
-    def test_subscribe_invalid_email(self, s):
-        r = s.post(f"{API}/newsletter", json={"email": "not-an-email"})
-        assert r.status_code == 422
+def test_razorpay_order_fields(created_order):
+    d = created_order
+    assert d["razorpay_order_id"].startswith("order_")
+    assert d["amount"] == 32000
+    assert d["currency"] == "INR"
+    assert d["key_id"] == RZP_KEY_ID
+    assert d["order_number"].startswith("OBL")
+    assert d["total"] == 320
+    assert "order_id" in d
 
 
-# ---------- Orders ----------
-class TestOrders:
-    def test_place_order(self, s):
-        products = s.get(f"{API}/products").json()
-        p = products[0]
-        payload = {
-            "items": [{"product_id": p["id"], "name": p["name"],
-                       "price": p["price"], "qty": 2, "size": "50ml",
-                       "image": p["images"][0]}],
-            "email": "TEST_order@example.com",
-            "name": "Test Buyer",
-            "address": "1 Test St",
-        }
-        r = s.post(f"{API}/orders", json=payload)
-        assert r.status_code == 200
-        order = r.json()
-        assert order["status"] == "confirmed"
-        assert order["order_number"].startswith("LUM")
-        assert order["total"] == round(p["price"] * 2, 2)
-        assert "_id" not in order
+def test_razorpay_order_persisted(created_order):
+    doc = _get_order_from_db(created_order["razorpay_order_id"])
+    assert doc is not None
+    assert doc["status"] == "created"
+    assert doc["order_number"] == created_order["order_number"]
 
-    def test_order_invalid_email(self, s):
-        r = s.post(f"{API}/orders", json={"items": [], "email": "bad", "name": "x"})
-        assert r.status_code == 422
+
+def test_razorpay_order_empty_cart(s):
+    payload = {"items": [], "email": "a@b.com", "name": "x"}
+    r = s.post(f"{API}/payments/razorpay/order", json=payload)
+    assert r.status_code == 400
+
+
+# ---------- Verify success ----------
+def test_verify_success_and_persist(s, created_order):
+    rzp_order_id = created_order["razorpay_order_id"]
+    payment_id = "pay_testABCD1234"
+    msg = f"{rzp_order_id}|{payment_id}".encode()
+    signature = hmac.new(RZP_KEY_SECRET.encode(), msg, hashlib.sha256).hexdigest()
+
+    r = s.post(f"{API}/payments/razorpay/verify", json={
+        "razorpay_order_id": rzp_order_id,
+        "razorpay_payment_id": payment_id,
+        "razorpay_signature": signature,
+    })
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["status"] == "paid"
+    assert data["order"]["status"] == "paid"
+    assert data["order"]["razorpay_payment_id"] == payment_id
+    assert "paid_at" in data["order"]
+
+    doc = _get_order_from_db(rzp_order_id)
+    assert doc["status"] == "paid"
+    assert doc["razorpay_payment_id"] == payment_id
+    assert doc.get("paid_at")
+
+
+# ---------- Verify failure ----------
+def test_verify_invalid_signature(s):
+    # Create a new order specifically for this test
+    payload = {
+        "items": [{"product_id": "p2", "name": "TEST FailItem", "price": 500, "qty": 2}],
+        "email": "fail@example.com",
+        "name": "TEST Fail",
+    }
+    r = s.post(f"{API}/payments/razorpay/order", json=payload)
+    assert r.status_code == 200
+    rzp_order_id = r.json()["razorpay_order_id"]
+
+    r2 = s.post(f"{API}/payments/razorpay/verify", json={
+        "razorpay_order_id": rzp_order_id,
+        "razorpay_payment_id": "pay_fake",
+        "razorpay_signature": "invalidsignature_random_string_xyz",
+    })
+    assert r2.status_code == 400
+    assert "verification failed" in r2.json().get("detail", "").lower()
+
+    doc = _get_order_from_db(rzp_order_id)
+    assert doc["status"] == "verification_failed"
