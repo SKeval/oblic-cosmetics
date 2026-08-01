@@ -31,7 +31,7 @@ export default function CartDrawer() {
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted">
                 <ShoppingBag size={40} strokeWidth={1} />
                 <p>Your bag is empty.</p>
-                <button onClick={() => { setOpen(false); navigate("/shop"); }} className="text-ink underline underline-offset-4">Continue shopping</button>
+                <button onClick={() => { setOpen(false); navigate("/#shop"); }} className="text-ink underline underline-offset-4">Continue shopping</button>
               </div>
             ) : (
               <>

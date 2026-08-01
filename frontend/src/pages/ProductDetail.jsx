@@ -5,7 +5,6 @@ import { Plus, Minus, Heart, ChevronDown, FlaskConical, Stethoscope, Leaf, Check
 import { getProduct, getProducts, getReviews, addReview } from "../api";
 import StarRating from "../components/StarRating";
 import ProductCard from "../components/ProductCard";
-import FAQ from "../components/FAQ";
 import { useCart } from "../context/CartContext";
 
 const FEATURE_ICONS = [FlaskConical, Stethoscope, Leaf, CheckCircle2];
@@ -24,13 +23,12 @@ export default function ProductDetail() {
   const [form, setForm] = useState({ author: "", rating: 5, body: "" });
 
   useEffect(() => {
-    window.scrollTo(0, 0);
     getProduct(id).then((p) => {
       setProduct(p);
       setSize(p.sizes?.[p.sizes.length - 1] || null);
       setActiveImg(0);
       getProducts({ category: p.category }).then((r) => setRelated(r.filter((x) => x.id !== p.id).slice(0, 4)));
-    }).catch(() => navigate("/shop"));
+    }).catch(() => navigate("/#shop"));
     getReviews(id).then(setReviews).catch(() => {});
   }, [id, navigate]);
 
@@ -53,7 +51,7 @@ export default function ProductDetail() {
   return (
     <div>
       <div className="container pt-8 pb-16">
-        <Link to="/shop" className="inline-flex items-center gap-2 text-[13px] text-muted hover:text-ink mb-8 transition-colors">
+        <Link to="/#shop" className="inline-flex items-center gap-2 text-[13px] text-muted hover:text-ink mb-8 transition-colors">
           <ArrowLeft size={14} /> Back to Shop
         </Link>
 
@@ -227,15 +225,13 @@ export default function ProductDetail() {
         <section className="container py-20" data-testid="related-section">
           <div className="flex items-end justify-between mb-10">
             <h2 className="font-display text-4xl md:text-5xl">You May Also Like</h2>
-            <Link to="/shop" className="hidden md:inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase hover:opacity-60">View All <ArrowRight size={15} /></Link>
+            <Link to="/#shop" className="hidden md:inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase hover:opacity-60">View All <ArrowRight size={15} /></Link>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
             {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </section>
       )}
-
-      <FAQ />
     </div>
   );
 }

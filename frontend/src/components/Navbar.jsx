@@ -4,10 +4,8 @@ import { Search, ShoppingBag, User, Menu, X, ChevronDown } from "lucide-react";
 import { useCart } from "../context/CartContext";
 
 const NAV = [
-  { label: "Shop", to: "/shop" },
-  { label: "Brands", to: "/shop" },
-  { label: "Offers", to: "/shop?on_sale=true" },
-  { label: "Blog", to: "/shop" },
+  { label: "Shop", to: "/#shop" },
+  { label: "Offers", to: "/?on_sale=true#shop" },
   { label: "About", to: "/about" },
 ];
 
@@ -36,14 +34,14 @@ export default function Navbar() {
                   className="text-[13.5px] tracking-wide text-ink-soft hover:text-ink transition-colors flex items-center gap-1"
                 >
                   {n.label}
-                  {(n.label === "Shop" || n.label === "Brands") && <ChevronDown size={13} className="mt-0.5" />}
+                  {n.label === "Shop" && <ChevronDown size={13} className="mt-0.5" />}
                 </Link>
               ))}
             </nav>
           </div>
 
           <div className="flex items-center gap-5">
-            <button onClick={() => navigate("/shop")} className="hover:opacity-60 transition-opacity" data-testid="search-btn" aria-label="Search">
+            <button onClick={() => navigate("/#shop")} className="hover:opacity-60 transition-opacity" data-testid="search-btn" aria-label="Search">
               <Search size={19} strokeWidth={1.5} />
             </button>
             <button onClick={() => setOpen(true)} className="relative hover:opacity-60 transition-opacity" data-testid="cart-btn" aria-label="Cart">
@@ -54,9 +52,9 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            <button className="hidden sm:block hover:opacity-60 transition-opacity" aria-label="Account" data-testid="account-btn">
+            <Link to="/account" className="hidden sm:block hover:opacity-60 transition-opacity" aria-label="Account" data-testid="account-btn">
               <User size={19} strokeWidth={1.5} />
-            </button>
+            </Link>
             <button className="lg:hidden" onClick={() => setMobile(true)} aria-label="Menu" data-testid="mobile-menu-btn">
               <Menu size={22} strokeWidth={1.5} />
             </button>

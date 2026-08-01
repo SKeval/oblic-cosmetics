@@ -5,13 +5,15 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from typing import List, Optional
 import uuid
+import re
 from datetime import datetime, timezone, timedelta
 import razorpay
 import bcrypt
 import jwt
+import httpx
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -81,7 +83,21 @@ async def require_customer(authorization: str = Header(None)):
     return {"id": customer["id"], "email": customer["email"], "name": customer.get("name", "")}
 
 
-app = FastAPI(title="Lumina API")
+async def get_current_customer_optional(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization[7:]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.InvalidTokenError:
+        return None
+    customer = await db.customers.find_one({"email": payload.get("sub")})
+    if not customer:
+        return None
+    return {"id": customer["id"], "email": customer["email"], "name": customer.get("name", "")}
+
+
+app = FastAPI(title="Oblic API")
 api_router = APIRouter(prefix="/api")
 
 
@@ -113,6 +129,40 @@ class NewsletterCreate(BaseModel):
     email: EmailStr
 
 
+INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+    "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+    "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan",
+    "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+]
+INDIAN_MOBILE_RE = re.compile(r"^[6-9]\d{9}$")
+INDIAN_PINCODE_RE = re.compile(r"^[1-9]\d{5}$")
+STATE_ALIASES = {"pondicherry": "puducherry", "orissa": "odisha", "nct of delhi": "delhi"}
+
+
+def normalize_state(s: str) -> str:
+    key = s.strip().lower()
+    return STATE_ALIASES.get(key, key)
+
+
+async def lookup_pincode_state(pincode: str) -> Optional[str]:
+    """Best-effort PIN code -> state lookup via India Post's public API. Returns None
+    (rather than raising) on any failure so a flaky third party never blocks checkout."""
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.get(f"https://api.postalpincode.in/pincode/{pincode}")
+            data = resp.json()
+            if data and data[0].get("Status") == "Success":
+                offices = data[0].get("PostOffice") or []
+                if offices:
+                    return offices[0].get("State")
+    except Exception:
+        pass
+    return None
+
+
 class CartItem(BaseModel):
     product_id: str
     name: str
@@ -134,7 +184,32 @@ class RazorpayOrderCreate(BaseModel):
     email: EmailStr
     name: str
     address: Optional[str] = ""
-    contact: Optional[str] = ""
+    contact: str
+    pincode: str
+    state: str
+
+    @field_validator("contact")
+    @classmethod
+    def validate_contact(cls, v):
+        v = v.strip()
+        if not INDIAN_MOBILE_RE.match(v):
+            raise ValueError("Enter a valid 10-digit Indian mobile number")
+        return v
+
+    @field_validator("pincode")
+    @classmethod
+    def validate_pincode(cls, v):
+        v = v.strip()
+        if not INDIAN_PINCODE_RE.match(v):
+            raise ValueError("Enter a valid 6-digit Indian PIN code")
+        return v
+
+    @field_validator("state")
+    @classmethod
+    def validate_state(cls, v):
+        if v not in INDIAN_STATES:
+            raise ValueError("Select a valid Indian state")
+        return v
 
 
 class RazorpayVerify(BaseModel):
@@ -172,7 +247,7 @@ class CustomerLogin(BaseModel):
 # ---------- Routes ----------
 @api_router.get("/")
 async def root():
-    return {"message": "Lumina API"}
+    return {"message": "Oblic API"}
 
 
 @api_router.get("/products")
@@ -244,39 +319,42 @@ async def add_review(product_id: str, payload: ReviewCreate):
     return review
 
 
-@api_router.get("/faqs")
-async def get_faqs():
-    faqs = await db.faqs.find({}, {"_id": 0}).to_list(100)
-    faqs.sort(key=lambda f: f.get("order", 0))
-    return faqs
-
-
 @api_router.post("/newsletter")
 async def subscribe(payload: NewsletterCreate):
     existing = await db.newsletter.find_one({"email": payload.email})
     if existing:
         return {"message": "You're already subscribed.", "ok": True}
     await db.newsletter.insert_one({"email": payload.email, "created_at": now_iso()})
-    return {"message": "Welcome to Lumina. Your 10% code is LUMINA10.", "ok": True}
+    return {"message": "Welcome to Oblic. Your 10% code is OBLIC10.", "ok": True}
 
 
 @api_router.post("/orders")
-async def create_order(payload: OrderCreate):
+async def create_order(payload: OrderCreate, customer: Optional[dict] = Depends(get_current_customer_optional)):
     total = round(sum(i.price * i.qty for i in payload.items), 2)
     order = {
         "id": str(uuid.uuid4()),
-        "order_number": "LUM" + str(uuid.uuid4().int)[:8],
+        "order_number": "OBL" + str(uuid.uuid4().int)[:8],
         "items": [i.model_dump() for i in payload.items],
         "email": payload.email,
         "name": payload.name,
         "address": payload.address,
         "total": total,
         "status": "confirmed",
+        "customer_id": customer["id"] if customer else None,
         "created_at": now_iso(),
     }
     await db.orders.insert_one({k: v for k, v in order.items()})
     order.pop("_id", None)
     return order
+
+
+# ---------- Pincode lookup ----------
+@api_router.get("/pincode/{pincode}")
+async def get_pincode_state(pincode: str):
+    if not INDIAN_PINCODE_RE.match(pincode):
+        raise HTTPException(status_code=400, detail="Invalid PIN code format")
+    state = await lookup_pincode_state(pincode)
+    return {"pincode": pincode, "state": state}
 
 
 # ---------- Razorpay Payments ----------
@@ -286,11 +364,18 @@ async def payments_config():
 
 
 @api_router.post("/payments/razorpay/order")
-async def create_razorpay_order(payload: RazorpayOrderCreate):
+async def create_razorpay_order(payload: RazorpayOrderCreate, customer: Optional[dict] = Depends(get_current_customer_optional)):
     if razorpay_client is None:
         raise HTTPException(status_code=503, detail="Payment gateway not configured. Please add Razorpay API keys.")
     if not payload.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
+
+    resolved_state = await lookup_pincode_state(payload.pincode)
+    if resolved_state and normalize_state(resolved_state) != normalize_state(payload.state):
+        raise HTTPException(
+            status_code=400,
+            detail=f"This PIN code belongs to {resolved_state}, not {payload.state}. Please check your address.",
+        )
 
     total = round(sum(i.price * i.qty for i in payload.items), 2)
     amount_paise = int(round(total * 100))
@@ -317,8 +402,11 @@ async def create_razorpay_order(payload: RazorpayOrderCreate):
         "name": payload.name,
         "address": payload.address,
         "contact": payload.contact,
+        "pincode": payload.pincode,
+        "state": payload.state,
         "total": total,
         "status": "created",
+        "customer_id": customer["id"] if customer else None,
         "created_at": now_iso(),
     }
     await db.orders.insert_one({k: v for k, v in order.items()})
@@ -390,6 +478,51 @@ async def save_abandoned_cart(payload: AbandonedCart):
 
 # ---------- Admin Auth ----------
 @api_router.post("/auth/login")
+async def admin_login(payload: LoginInput):
+    admin = await db.admins.find_one({"email": payload.email.lower()})
+    if not admin or not verify_password(payload.password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_access_token(admin["email"])
+    return {"token": token, "email": admin["email"], "name": admin.get("name", "Admin")}
+
+
+@api_router.get("/auth/me")
+async def admin_me(admin=Depends(require_admin)):
+    return admin
+
+
+# ---------- Customer Auth ----------
+@api_router.post("/auth/customer/register")
+async def customer_register(payload: CustomerRegister):
+    email = payload.email.lower()
+    existing = await db.customers.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+    customer = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name,
+        "email": email,
+        "password_hash": hash_password(payload.password),
+        "created_at": now_iso(),
+    }
+    await db.customers.insert_one(customer)
+    token = create_access_token(customer["email"])
+    return {"token": token, "email": customer["email"], "name": customer["name"]}
+
+
+@api_router.post("/auth/customer/login")
+async def customer_login(payload: CustomerLogin):
+    customer = await db.customers.find_one({"email": payload.email.lower()})
+    if not customer or not verify_password(payload.password, customer["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_access_token(customer["email"])
+    return {"token": token, "email": customer["email"], "name": customer.get("name", "")}
+
+
+@api_router.get("/auth/customer/me")
+async def customer_me(customer=Depends(require_customer)):
+    return customer
+
 
 # ---------- Admin ----------
 @api_router.get("/admin/orders")
@@ -429,6 +562,20 @@ async def admin_stats(admin=Depends(require_admin)):
     }
 
 
+# ---------- Customer ----------
+@api_router.get("/customer/orders")
+async def customer_orders(customer=Depends(require_customer)):
+    orders = await db.orders.find(
+        {"$or": [
+            {"customer_id": customer["id"]},
+            {"email": {"$regex": f"^{re.escape(customer['email'])}$", "$options": "i"}},
+        ]},
+        {"_id": 0},
+    ).to_list(1000)
+    orders.sort(key=lambda o: o.get("created_at", ""), reverse=True)
+    return orders
+
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -445,16 +592,13 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def seed_data():
-    from seed import PRODUCTS, REVIEWS, FAQS
+    from seed import PRODUCTS, REVIEWS
     if await db.products.count_documents({}) == 0:
         await db.products.insert_many([dict(p) for p in PRODUCTS])
         logger.info(f"Seeded {len(PRODUCTS)} products")
     if await db.reviews.count_documents({}) == 0:
         await db.reviews.insert_many([dict(r) for r in REVIEWS])
         logger.info(f"Seeded {len(REVIEWS)} reviews")
-    if await db.faqs.count_documents({}) == 0:
-        await db.faqs.insert_many([dict(f) for f in FAQS])
-        logger.info(f"Seeded {len(FAQS)} faqs")
 
     # Seed / update admin account
     if ADMIN_EMAIL and ADMIN_PASSWORD:

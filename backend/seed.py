@@ -118,17 +118,3 @@ def _reviews_for(pid, base):
 REVIEWS = []
 for idx, prod in enumerate(PRODUCTS):
     REVIEWS.extend(_reviews_for(prod["id"], idx))
-
-
-FAQS = [
-    {"id": str(uuid.uuid4()), "order": 1, "question": "Are your products vegan and cruelty-free?",
-     "answer": "Yes, all Oblic products are cruelty-free and never tested on animals at any stage of production. We're committed to ethical, clean beauty."},
-    {"id": str(uuid.uuid4()), "order": 2, "question": "Do your products contain parabens or sulphates?",
-     "answer": "No. Our formulas are free from parabens, sulphates and mineral oil. We use clean, skin-friendly ingredients, 100% made in India."},
-    {"id": str(uuid.uuid4()), "order": 3, "question": "Are your products suitable for sensitive skin?",
-     "answer": "Yes. Our range is gentle and suitable for all skin and hair types. We still recommend a patch test before first use if you have specific concerns."},
-    {"id": str(uuid.uuid4()), "order": 4, "question": "How do I know which product is right for me?",
-     "answer": "Each product page lists the concerns it addresses and how to use it. You can also reach our team via chat for a personalised recommendation."},
-    {"id": str(uuid.uuid4()), "order": 5, "question": "Do you ship across India?",
-     "answer": "Yes, we ship pan-India with fast and reliable delivery to your doorstep, and shipping is completely FREE on all orders, all across India."},
-]

@@ -6,11 +6,11 @@ import { ADDRESS, WHATSAPP_DISPLAY, WHATSAPP_LINK, INSTAGRAM_LINK, MAPS_LINK } f
 
 const COLS = [
   { title: "Category", links: [
-    { label: "Skincare", to: "/shop?category=Skincare" },
-    { label: "Haircare", to: "/shop?category=Haircare" },
-    { label: "Makeup", to: "/shop" },
-    { label: "Fragrances", to: "/shop" },
-    { label: "Bodycare", to: "/shop" },
+    { label: "Skincare", to: "/?category=Skincare#shop" },
+    { label: "Haircare", to: "/?category=Haircare#shop" },
+    { label: "Makeup", to: "/#shop" },
+    { label: "Fragrances", to: "/#shop" },
+    { label: "Bodycare", to: "/#shop" },
   ]},
   { title: "Company", links: [
     { label: "About", to: "/about" },

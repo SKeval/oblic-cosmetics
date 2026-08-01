@@ -78,7 +78,7 @@ export default function About() {
           </div>
 
           <div className="mt-12 text-center">
-            <Link to="/shop" data-testid="about-shop-cta"
+            <Link to="/#shop" data-testid="about-shop-cta"
               className="inline-flex items-center gap-2 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">
               Shop the Collection <ArrowRight size={15} />
             </Link>

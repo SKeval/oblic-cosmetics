@@ -1,36 +1,87 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { getProducts } from "../api";
+import React, { useCallback, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { ArrowRight, Check, SlidersHorizontal, X } from "lucide-react";
+import { getCategories, getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
-import FAQ from "../components/FAQ";
 
 const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", to: "/shop?category=Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ea440177fda1ce339730408c4835940fb25ebeb5c4907431406699e0fbe315e5.jpeg" },
-  { name: "Haircare", to: "/shop?category=Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/aa4daf1a289a885e3ff7e33822d2663887859cb841d434cdebbc36e450beecc3.jpeg" },
+  { name: "Skincare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/ea440177fda1ce339730408c4835940fb25ebeb5c4907431406699e0fbe315e5.jpeg" },
+  { name: "Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/aa4daf1a289a885e3ff7e33822d2663887859cb841d434cdebbc36e450beecc3.jpeg" },
   { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
 
 const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Paraben & Sulphate Free", "Made in India", "Free Shipping Across India"];
 
-export default function Home() {
-  const [products, setProducts] = useState([]);
+const SORTS = [
+  { v: "featured", label: "Featured" },
+  { v: "price_asc", label: "Price: Low to High" },
+  { v: "price_desc", label: "Price: High to Low" },
+  { v: "rating", label: "Top Rated" },
+];
 
-  useEffect(() => { getProducts({ sort: "featured" }).then(setProducts).catch(() => {}); }, []);
+const COMING_SOON = ["Makeup", "Fragrances", "Bodycare"];
+
+function scrollToShop() {
+  document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+export default function Home() {
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(true);
+
+  const category = searchParams.get("category") || "All";
+  const onSale = searchParams.get("on_sale") === "true";
+  const sort = searchParams.get("sort") || "featured";
+
+  useEffect(() => { getCategories().then(setCats).catch(() => {}); }, []);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    getProducts({ category, on_sale: onSale || undefined, sort })
+      .then(setProducts).catch(() => {}).finally(() => setLoading(false));
+  }, [category, onSale, sort]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (location.hash === "#shop") scrollToShop();
+  }, [location]);
+
+  const update = (key, val) => {
+    const next = new URLSearchParams(searchParams);
+    if (val === null || val === "All" || val === false) next.delete(key);
+    else next.set(key, val);
+    setSearchParams(next);
+  };
+
+  const filterAndScroll = (key, val) => {
+    update(key, val);
+    scrollToShop();
+  };
+
+  const clearAll = () => setSearchParams(new URLSearchParams());
+  const activeCount = (category !== "All" ? 1 : 0) + (onSale ? 1 : 0);
 
   return (
     <div>
       {/* Hero */}
       <section className="container pt-6">
-        <Link to="/shop" className="block relative rounded-[4px] overflow-hidden group" data-testid="hero-cta">
+        <div className="relative rounded-[4px] overflow-hidden">
           <img src={HERO} alt="Oblic - Luxury in Every Touch. Premium skincare and haircare."
-            className="w-full h-auto block transition-transform duration-700 group-hover:scale-[1.01]" />
-        </Link>
+            className="w-full h-auto block" />
+          {/* Overlays the "Shop Now" pill baked into the hero image, so only that button navigates */}
+          <button type="button" onClick={scrollToShop} aria-label="Shop now" data-testid="hero-cta"
+            className="absolute"
+            style={{ left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" }} />
+        </div>
       </section>
 
       {/* Marquee */}
@@ -44,19 +95,97 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Best sellers */}
-      <section className="container py-20" data-testid="bestsellers-section">
+      {/* Shop All */}
+      <section className="container py-20" id="shop" data-testid="shop-section">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="font-display text-5xl md:text-6xl leading-none">Best Seller</h2>
-            <p className="text-ink-soft mt-3 max-w-md text-[15px]">Our most-loved products, handpicked by beauty enthusiasts like you.</p>
+            <h2 className="font-display text-5xl md:text-6xl leading-none">Shop All</h2>
+            <p className="text-ink-soft mt-3 max-w-md text-[15px]">Browse our full range of clean, effective skincare and haircare.</p>
           </div>
-          <Link to="/shop" className="hidden md:inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase hover:opacity-60 transition-opacity">
-            View All <ArrowRight size={15} />
-          </Link>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-12">
-          {products.slice(0, 6).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+
+        <div className="flex items-center justify-between border-b border-line pb-5 mb-8">
+          <button onClick={() => setShowFilters((s) => !s)} data-testid="toggle-filters"
+            className="flex items-center gap-2 text-[14px] tracking-wide hover:opacity-60 transition-opacity">
+            <SlidersHorizontal size={16} /> {showFilters ? "Hide Filters" : "Filters"}
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] text-muted hidden sm:inline">Sort by</span>
+            <select value={sort} onChange={(e) => update("sort", e.target.value)} data-testid="sort-select"
+              className="bg-paper border border-line rounded-full px-4 py-2 text-[13.5px] outline-none cursor-pointer">
+              {SORTS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className={`grid gap-10 ${showFilters ? "lg:grid-cols-[240px_1fr]" : "grid-cols-1"}`}>
+          {showFilters && (
+            <aside className="space-y-8" data-testid="filters-sidebar">
+              <div>
+                <p className="text-[12px] tracking-[0.18em] uppercase text-muted mb-4">Category</p>
+                <div className="space-y-3">
+                  {["All", ...cats].map((c) => (
+                    <button key={c} onClick={() => update("category", c)} data-testid={`filter-cat-${c.toLowerCase()}`}
+                      className="flex items-center gap-3 text-[14.5px] w-full text-left group">
+                      <span className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${category === c ? "bg-plum border-plum" : "border-ink/30 group-hover:border-ink"}`}>
+                        {category === c && <span className="w-1.5 h-1.5 rounded-full bg-cream" />}
+                      </span>
+                      <span className={category === c ? "text-ink" : "text-ink-soft"}>{c}</span>
+                    </button>
+                  ))}
+                  {COMING_SOON.map((c) => (
+                    <div key={c} data-testid={`filter-soon-${c.toLowerCase()}`}
+                      className="flex items-center justify-between gap-3 text-[14.5px] w-full text-left opacity-55 cursor-not-allowed">
+                      <span className="flex items-center gap-3">
+                        <span className="w-4 h-4 rounded-full border border-ink/20" />
+                        <span className="text-muted">{c}</span>
+                      </span>
+                      <span className="text-[10px] tracking-[0.12em] uppercase text-plum bg-sage/60 rounded-full px-2 py-0.5">Soon</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-line pt-6">
+                <p className="text-[12px] tracking-[0.18em] uppercase text-muted mb-4">Special Offers</p>
+                <button onClick={() => update("on_sale", !onSale)} data-testid="filter-onsale"
+                  className="flex items-center gap-3 text-[14.5px] group">
+                  <span className={`w-4 h-4 rounded-[3px] border flex items-center justify-center ${onSale ? "bg-plum border-plum" : "border-ink/30 group-hover:border-ink"}`}>
+                    {onSale && <Check size={12} className="text-cream" />}
+                  </span>
+                  <span className={onSale ? "text-ink" : "text-ink-soft"}>On Sale</span>
+                </button>
+              </div>
+              {activeCount > 0 && (
+                <div className="border-t border-line pt-6 space-y-3">
+                  <p className="text-[13px] text-muted">{activeCount} filter{activeCount > 1 ? "s" : ""} selected</p>
+                  <button onClick={clearAll} data-testid="clear-filters"
+                    className="flex items-center gap-2 text-[13px] tracking-[0.1em] uppercase border border-ink rounded-full px-5 py-2.5 hover:bg-ink hover:text-cream transition-colors">
+                    <X size={13} /> Clear All
+                  </button>
+                </div>
+              )}
+            </aside>
+          )}
+
+          <div>
+            <div className="flex items-baseline justify-between mb-6">
+              <h3 className="font-display text-3xl">{category === "All" ? "All Products" : category}</h3>
+              <span className="text-[13px] text-muted" data-testid="result-count">{products.length} products</span>
+            </div>
+            {loading ? (
+              <div className={`grid grid-cols-2 ${showFilters ? "md:grid-cols-3" : "md:grid-cols-4"} gap-x-5 gap-y-12`}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse"><div className="aspect-[4/5] bg-cream-deep rounded-[2px]" /><div className="h-4 bg-cream-deep mt-4 w-2/3" /></div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <p className="text-muted py-20 text-center">No products match your filters.</p>
+            ) : (
+              <div className={`grid grid-cols-2 ${showFilters ? "md:grid-cols-3" : "md:grid-cols-4"} gap-x-5 gap-y-12`} data-testid="product-grid">
+                {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -80,12 +209,12 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <Link to={c.to} key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
-                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group">
+              <button type="button" onClick={() => filterAndScroll("category", c.name)} key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
+                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group text-left">
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-ink/25 group-hover:bg-ink/40 transition-colors" />
                 <span className="absolute bottom-5 left-5 font-display text-cream text-2xl">{c.name}</span>
-              </Link>
+              </button>
             )
           ))}
         </div>
@@ -98,15 +227,13 @@ export default function Home() {
             <p className="text-[12px] tracking-[0.22em] uppercase text-ink-soft mb-4">The Ritual</p>
             <h2 className="font-display text-4xl md:text-5xl leading-tight">Beauty that begins with intention</h2>
             <p className="text-ink-soft mt-5 text-[15px] leading-relaxed max-w-md">Every formula is crafted with clean, biodegradable ingredients and a deep respect for your skin and the planet. Slow beauty, done right.</p>
-            <Link to="/shop" className="inline-flex items-center gap-2 mt-8 text-[13px] tracking-[0.12em] uppercase border-b border-ink pb-1 hover:gap-3 transition-all">
+            <button type="button" onClick={scrollToShop} className="inline-flex items-center gap-2 mt-8 text-[13px] tracking-[0.12em] uppercase border-b border-ink pb-1 hover:gap-3 transition-all">
               Discover the range <ArrowRight size={15} />
-            </Link>
+            </button>
           </div>
           <img src={LIFESTYLE} alt="Ritual" className="w-full h-full max-h-[520px] object-cover" />
         </div>
       </section>
-
-      <FAQ />
     </div>
   );
 }

@@ -7,10 +7,19 @@ import requests
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://admiring-beaver-9.preview.emergentagent.com').rstrip('/')
 API = f"{BASE_URL}/api"
 
+ADMIN_EMAIL = "admin@oblic.com"
+ADMIN_PASSWORD = "Oblic@Admin2026"
+
 
 @pytest.fixture(scope="module")
 def s():
-    return requests.Session()
+    # /admin/* routes require an admin bearer token (see test_admin_auth.py); authenticate the
+    # shared session up front so every test below can call them directly.
+    session = requests.Session()
+    r = session.post(f"{API}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    assert r.status_code == 200, r.text
+    session.headers.update({"Authorization": f"Bearer {r.json()['token']}"})
+    return session
 
 
 # ---------- Admin: orders list ----------
@@ -34,6 +43,8 @@ def a_created_order(s):
         "name": "TEST Admin",
         "address": "TEST",
         "contact": "9999999998",
+        "pincode": "400001",
+        "state": "Maharashtra",
     }
     r = s.post(f"{API}/payments/razorpay/order", json=payload)
     assert r.status_code == 200, r.text

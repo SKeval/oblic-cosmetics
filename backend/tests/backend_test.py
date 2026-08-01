@@ -56,6 +56,8 @@ def created_order(s):
         "name": "TEST User",
         "address": "TEST Addr",
         "contact": "9999999999",
+        "pincode": "400001",
+        "state": "Maharashtra",
     }
     r = s.post(f"{API}/payments/razorpay/order", json=payload)
     assert r.status_code == 200, r.text
@@ -81,7 +83,7 @@ def test_razorpay_order_persisted(created_order):
 
 
 def test_razorpay_order_empty_cart(s):
-    payload = {"items": [], "email": "a@b.com", "name": "x"}
+    payload = {"items": [], "email": "a@b.com", "name": "x", "contact": "9999999999", "pincode": "400001", "state": "Maharashtra"}
     r = s.post(f"{API}/payments/razorpay/order", json=payload)
     assert r.status_code == 400
 
@@ -118,6 +120,9 @@ def test_verify_invalid_signature(s):
         "items": [{"product_id": "p2", "name": "TEST FailItem", "price": 500, "qty": 2}],
         "email": "fail@example.com",
         "name": "TEST Fail",
+        "contact": "9999999999",
+        "pincode": "400001",
+        "state": "Maharashtra",
     }
     r = s.post(f"{API}/payments/razorpay/order", json=payload)
     assert r.status_code == 200
