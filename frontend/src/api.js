@@ -5,6 +5,22 @@ export const API = `${BACKEND_URL}/api`;
 
 const api = axios.create({ baseURL: API });
 
+const savedToken = typeof localStorage !== "undefined" ? localStorage.getItem("oblic_admin_token") : null;
+if (savedToken) api.defaults.headers.common["Authorization"] = `Bearer ${savedToken}`;
+
+export function setAdminToken(token) {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("oblic_admin_token", token);
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+    localStorage.removeItem("oblic_admin_token");
+  }
+}
+
+export const adminLogin = (email, password) => api.post("/auth/login", { email, password }).then((r) => r.data);
+export const adminMe = () => api.get("/auth/me").then((r) => r.data);
+
 export const getProducts = (params) => api.get("/products", { params }).then((r) => r.data);
 export const getProduct = (id) => api.get(`/products/${id}`).then((r) => r.data);
 export const getCategories = () => api.get("/categories").then((r) => r.data);

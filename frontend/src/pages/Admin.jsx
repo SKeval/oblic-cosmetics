@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw } from "lucide-react";
-import { getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats } from "../api";
+import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut } from "lucide-react";
+import { getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken } from "../api";
 
 const STATUS_OPTIONS = ["created", "paid", "fulfilled", "cancelled", "verification_failed"];
 
@@ -25,6 +25,10 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 export default function Admin() {
+  const [authed, setAuthed] = useState(null); // null=checking, true, false
+  const [creds, setCreds] = useState({ email: "", password: "" });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [tab, setTab] = useState("orders");
   const [orders, setOrders] = useState([]);
   const [carts, setCarts] = useState([]);
@@ -39,13 +43,60 @@ export default function Admin() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const token = localStorage.getItem("oblic_admin_token");
+    if (!token) { setAuthed(false); return; }
+    adminMe().then(() => { setAuthed(true); load(); }).catch(() => { setAdminToken(null); setAuthed(false); });
+  }, []);
+
+  const doLogin = async (e) => {
+    e.preventDefault();
+    setAuthError(""); setAuthLoading(true);
+    try {
+      const data = await adminLogin(creds.email, creds.password);
+      setAdminToken(data.token);
+      setAuthed(true);
+      load();
+    } catch (err) {
+      setAuthError(err?.response?.data?.detail || "Login failed. Please try again.");
+    } finally { setAuthLoading(false); }
+  };
+
+  const logout = () => { setAdminToken(null); setAuthed(false); setCreds({ email: "", password: "" }); };
 
   const changeStatus = async (id, status) => {
     const updated = await updateOrderStatus(id, status);
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: updated.status } : o)));
     getAdminStats().then(setStats);
   };
+
+  if (authed === null) {
+    return <div className="container py-40 text-center text-muted" data-testid="admin-checking">Loading…</div>;
+  }
+
+  if (!authed) {
+    return (
+      <div className="container py-20 flex justify-center" data-testid="admin-login">
+        <div className="w-full max-w-sm bg-paper border border-line rounded-[4px] p-8">
+          <div className="w-12 h-12 rounded-full bg-plum text-cream flex items-center justify-center mb-6"><Lock size={20} strokeWidth={1.6} /></div>
+          <p className="text-[12px] tracking-[0.22em] uppercase text-muted mb-2">Oblic Admin</p>
+          <h1 className="font-display text-3xl mb-6">Sign in</h1>
+          <form onSubmit={doLogin} className="space-y-4">
+            <input required type="email" value={creds.email} onChange={(e) => setCreds({ ...creds, email: e.target.value })} placeholder="Admin email"
+              data-testid="admin-email" className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            <input required type="password" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} placeholder="Password"
+              data-testid="admin-password" className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            {authError && <p className="text-red-600 text-[13px]" data-testid="admin-login-error">{authError}</p>}
+            <button type="submit" disabled={authLoading} data-testid="admin-login-btn"
+              className="w-full bg-plum text-cream py-3.5 rounded-full text-[13px] tracking-[0.14em] uppercase hover:bg-ink transition-colors disabled:opacity-50">
+              {authLoading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          <Link to="/" className="block text-center text-[13px] text-muted hover:text-ink mt-6 underline underline-offset-4">Back to store</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-12" data-testid="admin-page">
@@ -54,9 +105,14 @@ export default function Admin() {
           <p className="text-[12px] tracking-[0.22em] uppercase text-muted mb-2">Oblic Admin</p>
           <h1 className="font-display text-5xl">Order Dashboard</h1>
         </div>
-        <button onClick={load} data-testid="admin-refresh" className="flex items-center gap-2 border border-ink rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:bg-ink hover:text-cream transition-colors">
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={load} data-testid="admin-refresh" className="flex items-center gap-2 border border-ink rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:bg-ink hover:text-cream transition-colors">
+            <RefreshCw size={14} /> Refresh
+          </button>
+          <button onClick={logout} data-testid="admin-logout" className="flex items-center gap-2 border border-line rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:border-ink transition-colors">
+            <LogOut size={14} /> Logout
+          </button>
+        </div>
       </div>
 
       {stats && (

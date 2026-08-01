@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,8 +8,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import razorpay
+import bcrypt
+import jwt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -24,6 +26,44 @@ razorpay_client = (
     razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
     if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET else None
 )
+
+JWT_SECRET = os.environ.get('JWT_SECRET', 'oblic-dev-secret')
+JWT_ALGORITHM = "HS256"
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '')
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def create_access_token(email: str) -> str:
+    payload = {"sub": email, "type": "access", "exp": datetime.now(timezone.utc) + timedelta(hours=12)}
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def require_admin(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization[7:]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired, please log in again")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    admin = await db.admins.find_one({"email": payload.get("sub")})
+    if not admin:
+        raise HTTPException(status_code=401, detail="Admin not found")
+    return {"email": admin["email"], "name": admin.get("name", "Admin")}
+
 
 app = FastAPI(title="Lumina API")
 api_router = APIRouter(prefix="/api")
@@ -95,6 +135,11 @@ class AbandonedCart(BaseModel):
     email: EmailStr
     name: Optional[str] = ""
     items: List[CartItem]
+
+
+class LoginInput(BaseModel):
+    email: EmailStr
+    password: str
 
 
 # ---------- Routes ----------
@@ -316,16 +361,31 @@ async def save_abandoned_cart(payload: AbandonedCart):
     return {"ok": True}
 
 
+# ---------- Admin Auth ----------
+@api_router.post("/auth/login")
+async def admin_login(payload: LoginInput):
+    admin = await db.admins.find_one({"email": payload.email.lower()})
+    if not admin or not verify_password(payload.password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_access_token(admin["email"])
+    return {"token": token, "email": admin["email"], "name": admin.get("name", "Admin")}
+
+
+@api_router.get("/auth/me")
+async def admin_me(admin=Depends(require_admin)):
+    return admin
+
+
 # ---------- Admin ----------
 @api_router.get("/admin/orders")
-async def admin_orders():
+async def admin_orders(admin=Depends(require_admin)):
     orders = await db.orders.find({}, {"_id": 0}).to_list(1000)
     orders.sort(key=lambda o: o.get("created_at", ""), reverse=True)
     return orders
 
 
 @api_router.patch("/admin/orders/{order_id}")
-async def admin_update_order(order_id: str, payload: OrderStatusUpdate):
+async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=Depends(require_admin)):
     result = await db.orders.update_one({"id": order_id}, {"$set": {"status": payload.status}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -341,7 +401,7 @@ async def admin_abandoned_carts():
 
 
 @api_router.get("/admin/stats")
-async def admin_stats():
+async def admin_stats(admin=Depends(require_admin)):
     orders = await db.orders.find({}, {"_id": 0}).to_list(2000)
     paid = [o for o in orders if o.get("status") == "paid"]
     revenue = round(sum(o.get("total", 0) for o in paid), 2)
@@ -380,6 +440,24 @@ async def seed_data():
     if await db.faqs.count_documents({}) == 0:
         await db.faqs.insert_many([dict(f) for f in FAQS])
         logger.info(f"Seeded {len(FAQS)} faqs")
+
+    # Seed / update admin account
+    if ADMIN_EMAIL and ADMIN_PASSWORD:
+        existing = await db.admins.find_one({"email": ADMIN_EMAIL.lower()})
+        if existing is None:
+            await db.admins.insert_one({
+                "email": ADMIN_EMAIL.lower(),
+                "password_hash": hash_password(ADMIN_PASSWORD),
+                "name": "Admin",
+                "created_at": now_iso(),
+            })
+            logger.info("Seeded admin account")
+        elif not verify_password(ADMIN_PASSWORD, existing["password_hash"]):
+            await db.admins.update_one(
+                {"email": ADMIN_EMAIL.lower()},
+                {"$set": {"password_hash": hash_password(ADMIN_PASSWORD)}},
+            )
+            logger.info("Updated admin password")
 
 
 @app.on_event("shutdown")

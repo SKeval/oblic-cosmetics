@@ -1,0 +1,31 @@
+{
+  "summary": "Tested admin JWT auth (login/me), protection of admin endpoints, frontend login gate + session + logout + orders/abandoned tabs, Footer 'Shop' column removal, and public-site regression. 16/17 backend pytest cases pass. 1 backend bug: /api/admin/abandoned-carts is UNPROTECTED (returns 200 with no token). All frontend flows on preview URL work: login gate shows admin-login when logged out, wrong password shows admin-login-error 'Invalid email or password', correct creds (admin@oblic.com / Oblic@Admin2026) show admin-page with 15 orders in orders-table and 4 stat cards; token persisted in localStorage.oblic_admin_token (~159 chars); reload keeps session; changing order-status-{n} dropdown persists (backend PATCH ok); admin-tab-abandoned renders abandoned-table; admin-logout clears token and returns to admin-login. Footer has only 'Category' and 'Company' columns (no 'Shop' column); newsletter, whatsapp, address links intact. Shop page still shows 3 products publicly. No runtime console errors.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/admin/abandoned-carts", "issue": "Endpoint is NOT protected with Depends(require_admin) — returns 200 with no Bearer token. Anyone can list all abandoned-cart emails/items. Add `admin=Depends(require_admin)` to the handler (server.py line ~397).", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_admin_auth.py",
+    "/app/test_reports/pytest/pytest_admin_auth.xml"
+  ],
+  "action_items": [
+    "Add `admin=Depends(require_admin)` to admin_abandoned_carts handler in /app/backend/server.py so /api/admin/abandoned-carts returns 401 without a valid Bearer token."
+  ],
+  "critical_code_review_comments": [
+    "One admin endpoint missed the auth dependency — verify by grepping `@api_router.get(\"/admin` for any handler without `Depends(require_admin)`.",
+    "JWT_SECRET is committed in backend/.env; acceptable for preview, but rotate before prod.",
+    "seed_admin only re-hashes when password differs; if only email changes, old admin remains. Consider deleting stale admins or seeding by unique key.",
+    "server.py at ~465 lines is still manageable; consider splitting when auth/admin/payments grow.",
+    "CORS is `*` with allow_credentials=True — browsers ignore credentials with wildcard, harmless for Bearer flow but worth tightening for prod."
+  ],
+  "updated_files": ["/app/backend/tests/test_admin_auth.py"],
+  "success_rate": {"backend": "94% (16/17)", "frontend": "100%"},
+  "test_credentials": "admin@oblic.com / Oblic@Admin2026 (from backend/.env). Used successfully.",
+  "seed_data_creation": "Public test order created via POST /api/orders (TEST_admin@example.com, TEST_pub@example.com) for PATCH verification. Harmless.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_admin_auth.py cover login, me, protection of /admin/orders, /admin/stats, /admin/abandoned-carts, PATCH /admin/orders/{id}, and public regression. After main agent adds require_admin to /api/admin/abandoned-carts, re-run: pytest /app/backend/tests/test_admin_auth.py -v. All 17 should pass."
+}

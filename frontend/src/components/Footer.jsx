@@ -5,13 +5,6 @@ import { Facebook, Instagram, MapPin, MessageCircle } from "lucide-react";
 import { ADDRESS, WHATSAPP_DISPLAY, WHATSAPP_LINK, INSTAGRAM_LINK, MAPS_LINK } from "../pages/About";
 
 const COLS = [
-  { title: "Shop", links: [
-    { label: "Shop All", to: "/shop" },
-    { label: "Best Sellers", to: "/shop" },
-    { label: "On Sale", to: "/shop?on_sale=true" },
-    { label: "Haircare", to: "/shop?category=Haircare" },
-    { label: "Skincare", to: "/shop?category=Skincare" },
-  ]},
   { title: "Category", links: [
     { label: "Skincare", to: "/shop?category=Skincare" },
     { label: "Haircare", to: "/shop?category=Haircare" },
