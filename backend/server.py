@@ -65,6 +65,22 @@ async def require_admin(authorization: str = Header(None)):
     return {"email": admin["email"], "name": admin.get("name", "Admin")}
 
 
+async def require_customer(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization[7:]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired, please log in again")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    customer = await db.customers.find_one({"email": payload.get("sub")})
+    if not customer:
+        raise HTTPException(status_code=401, detail="Account not found")
+    return {"id": customer["id"], "email": customer["email"], "name": customer.get("name", "")}
+
+
 app = FastAPI(title="Lumina API")
 api_router = APIRouter(prefix="/api")
 
@@ -138,6 +154,17 @@ class AbandonedCart(BaseModel):
 
 
 class LoginInput(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class CustomerRegister(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+
+class CustomerLogin(BaseModel):
     email: EmailStr
     password: str
 
@@ -363,18 +390,6 @@ async def save_abandoned_cart(payload: AbandonedCart):
 
 # ---------- Admin Auth ----------
 @api_router.post("/auth/login")
-async def admin_login(payload: LoginInput):
-    admin = await db.admins.find_one({"email": payload.email.lower()})
-    if not admin or not verify_password(payload.password, admin["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = create_access_token(admin["email"])
-    return {"token": token, "email": admin["email"], "name": admin.get("name", "Admin")}
-
-
-@api_router.get("/auth/me")
-async def admin_me(admin=Depends(require_admin)):
-    return admin
-
 
 # ---------- Admin ----------
 @api_router.get("/admin/orders")
