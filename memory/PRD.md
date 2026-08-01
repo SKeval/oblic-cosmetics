@@ -12,21 +12,21 @@ User wanted to redesign their cosmetics website to match reference images of "Lu
 Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 
 ## Implemented (2026-06)
-- Rebranded to **Oblic** (logo from client PDF)
-- 3 real products (Rosemary Methi Shampoo ₹320, Fenugreek Hair Oil ₹180, Niacinamide Face Serum ₹540) with client photos on neutral studio bg; each product gallery = [product, relevant lifestyle, PDF label detail]
-- INR (₹) pricing; FREE shipping across India on all orders (checkout shipping=0)
-- Product cards/detail use aspect-[2/3] object-cover (no crop)
-- **About page** (/about): story + Address, WhatsApp (+91 7623067169, wa.me/917623067169), Instagram (@oblic_cosmetics)
-- Footer: Facebook + Instagram only (both -> Instagram); address + WhatsApp; all column links functional
-- **Legal pages**: /terms, /refund-policy, /shipping-policy (text from client HTML, rendered via PolicyLayout)
-- Checkout -> Instamojo hosted payment link redirect
-- All long dashes (em/en) removed site-wide
-- Tested: iteration_1/2/3 all frontend 100%
+- Rebranded to **Oblic**; 3 real products with client photos; INR pricing; FREE shipping across India
+- About/Terms address = "Surat"; WhatsApp +91 8460067169 (wa.me/918460067169); Instagram @oblic_cosmetics
+- New home hero = client banner image (full-width, links to /shop)
+- Legal pages: /terms, /refund-policy, /shipping-policy
+- **Razorpay** dynamic checkout (TEST mode): order create + signature verify + order marked paid
+- **Admin dashboard** (/admin, NO auth yet): stats, orders table with status management, abandoned carts tab
+- **Abandoned cart** capture on checkout email blur (POST /api/abandoned-cart), restored via localStorage; cart drawer shows "saved" note
+- All long dashes removed site-wide
+- Tested: iterations 1-7 all 100%
 
 ## Backlog / Next
-- Razorpay LIVE: switch backend/.env to live pair (need live Key Secret for rzp_live_TKD8ohWtZjQHqN) to accept real payments
+- Razorpay LIVE: need live Key Secret for rzp_live_TKD8ohWtZjQHqN
+- Protect /admin with authentication before production (currently open)
 - Add products as Makeup/Fragrances/Bodycare launch
-- P2: user accounts, order history, wishlist, search bar, floating WhatsApp button, admin orders view
+- P2: order confirmation emails, floating WhatsApp button, product search
 
 ## Backlog / Next
 - Instamojo: currently a hosted payment-LINK redirect to https://www.instamojo.com/@obliccosmetics/ (order created as record, then user pays on Instamojo, quoting order number). Full API integration (auto amount + payment confirmation/webhook) requires Instamojo API keys.
