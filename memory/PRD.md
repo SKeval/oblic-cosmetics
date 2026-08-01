@@ -24,9 +24,9 @@ Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 - Tested: iteration_1/2/3 all frontend 100%
 
 ## Backlog / Next
-- Instamojo full API integration (needs API keys) for auto amount + payment confirmation
+- Razorpay LIVE: switch backend/.env to live pair (need live Key Secret for rzp_live_TKD8ohWtZjQHqN) to accept real payments
 - Add products as Makeup/Fragrances/Bodycare launch
-- P2: user accounts, order history, wishlist, search bar, floating WhatsApp button
+- P2: user accounts, order history, wishlist, search bar, floating WhatsApp button, admin orders view
 
 ## Backlog / Next
 - Instamojo: currently a hosted payment-LINK redirect to https://www.instamojo.com/@obliccosmetics/ (order created as record, then user pays on Instamojo, quoting order number). Full API integration (auto amount + payment confirmation/webhook) requires Instamojo API keys.
