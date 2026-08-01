@@ -2,9 +2,9 @@ import React from "react";
 import { MapPin, MessageCircle, Instagram, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const ADDRESS = "314 The Gellery Business Hub 2, near Mahaveer Chowk, Yogichowk, Surat, Gujarat 395011.";
-export const WHATSAPP_DISPLAY = "+91 7623067169";
-export const WHATSAPP_LINK = "https://wa.me/917623067169";
+export const ADDRESS = "Surat";
+export const WHATSAPP_DISPLAY = "+91 8460067169";
+export const WHATSAPP_LINK = "https://wa.me/918460067169";
 export const INSTAGRAM_LINK = "https://www.instagram.com/oblic_cosmetics";
 export const MAPS_LINK = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(ADDRESS);
 

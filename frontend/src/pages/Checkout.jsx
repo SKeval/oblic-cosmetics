@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript } from "../api";
+import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript, saveAbandonedCart } from "../api";
 
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
@@ -14,6 +14,15 @@ export default function Checkout() {
   const [gatewayEnabled, setGatewayEnabled] = useState(true);
   const shipping = 0;
   const total = subtotal + shipping;
+
+  const captureAbandoned = () => {
+    if (!form.email || items.length === 0) return;
+    saveAbandonedCart({
+      email: form.email,
+      name: form.name,
+      items: items.map((i) => ({ product_id: i.product_id, name: i.name, price: i.price, size: i.size, image: i.image, qty: i.qty })),
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     loadRazorpayScript();
@@ -96,7 +105,7 @@ export default function Checkout() {
           <p className="text-[12px] tracking-[0.18em] uppercase text-muted">Contact & Shipping</p>
           <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name"
             data-testid="checkout-name" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />
-          <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email address"
+          <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} onBlur={captureAbandoned} placeholder="Email address"
             data-testid="checkout-email" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />
           <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Mobile number" inputMode="tel"
             data-testid="checkout-contact" className="w-full bg-paper border border-line rounded-full px-5 py-3.5 outline-none focus:border-ink" />

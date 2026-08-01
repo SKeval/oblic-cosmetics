@@ -16,6 +16,11 @@ export const createOrder = (data) => api.post("/orders", data).then((r) => r.dat
 export const getPaymentConfig = () => api.get("/payments/config").then((r) => r.data);
 export const createRazorpayOrder = (data) => api.post("/payments/razorpay/order", data).then((r) => r.data);
 export const verifyRazorpayPayment = (data) => api.post("/payments/razorpay/verify", data).then((r) => r.data);
+export const saveAbandonedCart = (data) => api.post("/abandoned-cart", data).then((r) => r.data);
+export const getAdminOrders = () => api.get("/admin/orders").then((r) => r.data);
+export const updateOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status }).then((r) => r.data);
+export const getAbandonedCarts = () => api.get("/admin/abandoned-carts").then((r) => r.data);
+export const getAdminStats = () => api.get("/admin/stats").then((r) => r.data);
 
 export function loadRazorpayScript() {
   return new Promise((resolve) => {

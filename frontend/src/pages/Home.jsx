@@ -6,7 +6,7 @@ import { getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
 import FAQ from "../components/FAQ";
 
-const HERO = "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/7d90171b8012048ab26a3f5efd17148d8b2805030ffc55cb0b204808f9edde18.jpeg";
+const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
@@ -27,24 +27,10 @@ export default function Home() {
     <div>
       {/* Hero */}
       <section className="container pt-6">
-        <div className="relative rounded-[4px] overflow-hidden">
-          <img src={HERO} alt="Curated collections" className="w-full h-[460px] md:h-[560px] object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/45 to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 max-w-2xl">
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-              className="text-cream/80 text-[12px] tracking-[0.25em] uppercase mb-4">Shop All</motion.p>
-            <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-              className="font-display text-cream text-5xl md:text-7xl leading-[0.95]">Explore Our<br />Curated Collections</motion.h1>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.3 }}
-              className="text-cream/90 mt-5 max-w-md text-[15px]">From skincare essentials to beauty must-haves, discover everything you need to elevate your routine.</motion.p>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.45 }}>
-              <Link to="/shop" data-testid="hero-cta"
-                className="inline-flex items-center gap-2 mt-8 bg-cream text-ink px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-paper transition-colors group w-fit">
-                Shop Now <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
-          </div>
-        </div>
+        <Link to="/shop" className="block relative rounded-[4px] overflow-hidden group" data-testid="hero-cta">
+          <img src={HERO} alt="Oblic - Luxury in Every Touch. Premium skincare and haircare."
+            className="w-full h-auto block transition-transform duration-700 group-hover:scale-[1.01]" />
+        </Link>
       </section>
 
       {/* Marquee */}

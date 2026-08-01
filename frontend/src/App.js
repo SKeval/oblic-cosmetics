@@ -13,6 +13,7 @@ import About from "@/pages/About";
 import Terms from "@/pages/Terms";
 import RefundPolicy from "@/pages/RefundPolicy";
 import ShippingPolicy from "@/pages/ShippingPolicy";
+import Admin from "@/pages/Admin";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
         <Footer />

@@ -87,6 +87,16 @@ class RazorpayVerify(BaseModel):
     razorpay_signature: str
 
 
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+
+class AbandonedCart(BaseModel):
+    email: EmailStr
+    name: Optional[str] = ""
+    items: List[CartItem]
+
+
 # ---------- Routes ----------
 @api_router.get("/")
 async def root():
@@ -281,7 +291,67 @@ async def verify_razorpay(payload: RazorpayVerify):
         }},
     )
     order = await db.orders.find_one({"razorpay_order_id": payload.razorpay_order_id}, {"_id": 0})
+    if order and order.get("email"):
+        await db.abandoned_carts.delete_many({"email": order["email"]})
     return {"status": "paid", "order": order}
+
+
+# ---------- Abandoned Cart ----------
+@api_router.post("/abandoned-cart")
+async def save_abandoned_cart(payload: AbandonedCart):
+    if not payload.items:
+        return {"ok": False}
+    total = round(sum(i.price * i.qty for i in payload.items), 2)
+    await db.abandoned_carts.update_one(
+        {"email": payload.email},
+        {"$set": {
+            "email": payload.email,
+            "name": payload.name,
+            "items": [i.model_dump() for i in payload.items],
+            "total": total,
+            "updated_at": now_iso(),
+        }},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+# ---------- Admin ----------
+@api_router.get("/admin/orders")
+async def admin_orders():
+    orders = await db.orders.find({}, {"_id": 0}).to_list(1000)
+    orders.sort(key=lambda o: o.get("created_at", ""), reverse=True)
+    return orders
+
+
+@api_router.patch("/admin/orders/{order_id}")
+async def admin_update_order(order_id: str, payload: OrderStatusUpdate):
+    result = await db.orders.update_one({"id": order_id}, {"$set": {"status": payload.status}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return order
+
+
+@api_router.get("/admin/abandoned-carts")
+async def admin_abandoned_carts():
+    carts = await db.abandoned_carts.find({}, {"_id": 0}).to_list(1000)
+    carts.sort(key=lambda c: c.get("updated_at", ""), reverse=True)
+    return carts
+
+
+@api_router.get("/admin/stats")
+async def admin_stats():
+    orders = await db.orders.find({}, {"_id": 0}).to_list(2000)
+    paid = [o for o in orders if o.get("status") == "paid"]
+    revenue = round(sum(o.get("total", 0) for o in paid), 2)
+    abandoned = await db.abandoned_carts.count_documents({})
+    return {
+        "total_orders": len(orders),
+        "paid_orders": len(paid),
+        "revenue": revenue,
+        "abandoned_carts": abandoned,
+    }
 
 
 app.include_router(api_router)

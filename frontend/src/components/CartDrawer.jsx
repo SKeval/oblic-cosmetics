@@ -68,6 +68,7 @@ export default function CartDrawer() {
                   >
                     Checkout
                   </button>
+                  <p className="text-[12px] text-muted text-center">Your bag is saved, come back anytime to finish.</p>
                 </div>
               </>
             )}
