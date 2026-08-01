@@ -394,7 +394,7 @@ async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=De
 
 
 @api_router.get("/admin/abandoned-carts")
-async def admin_abandoned_carts():
+async def admin_abandoned_carts(admin=Depends(require_admin)):
     carts = await db.abandoned_carts.find({}, {"_id": 0}).to_list(1000)
     carts.sort(key=lambda c: c.get("updated_at", ""), reverse=True)
     return carts

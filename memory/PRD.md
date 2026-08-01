@@ -17,16 +17,17 @@ Cream #F4F1EA base, ink #1E1B18, plum #2E2438 accent, sage #D7DCC4 highlight.
 - New home hero = client banner image (full-width, links to /shop)
 - Legal pages: /terms, /refund-policy, /shipping-policy
 - **Razorpay** dynamic checkout (TEST mode): order create + signature verify + order marked paid
-- **Admin dashboard** (/admin, NO auth yet): stats, orders table with status management, abandoned carts tab
-- **Abandoned cart** capture on checkout email blur (POST /api/abandoned-cart), restored via localStorage; cart drawer shows "saved" note
+- **Admin dashboard** (/admin) with **secure JWT login** (bcrypt password, Bearer token); all /api/admin/* routes protected (401 without token)
+- Footer: removed Shop column (Category + Company remain)
+- **Abandoned cart** capture on checkout email blur; localStorage cart persistence
 - All long dashes removed site-wide
-- Tested: iterations 1-7 all 100%
+- Tested: iterations 1-8 all pass (admin auth 17/17 pytest)
 
 ## Backlog / Next
 - Razorpay LIVE: need live Key Secret for rzp_live_TKD8ohWtZjQHqN
-- Protect /admin with authentication before production (currently open)
+- Rotate JWT_SECRET before production
 - Add products as Makeup/Fragrances/Bodycare launch
-- P2: order confirmation emails, floating WhatsApp button, product search
+- P2: order confirmation emails, abandoned-cart win-back emails, floating WhatsApp button, product search
 
 ## Backlog / Next
 - Instamojo: currently a hosted payment-LINK redirect to https://www.instamojo.com/@obliccosmetics/ (order created as record, then user pays on Instamojo, quoting order number). Full API integration (auto amount + payment confirmation/webhook) requires Instamojo API keys.
