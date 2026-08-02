@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useCustomer } from "../context/CustomerContext";
-import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState } from "../api";
+import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, cancelRazorpayOrder, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState } from "../api";
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
@@ -149,7 +149,15 @@ export default function Checkout() {
             setError("Payment was received but could not be verified. Please contact support with your payment reference.");
           }
         },
-        modal: { ondismiss: () => setLoading(false) },
+        modal: {
+          ondismiss: () => {
+            // Closed the checkout without paying — mark the pending order cancelled rather
+            // than leaving it stuck as "created" forever in the admin dashboard. The backend
+            // only flips orders still in "created", so this can never clobber a real payment.
+            cancelRazorpayOrder(data.razorpay_order_id).catch(() => {});
+            setLoading(false);
+          },
+        },
       };
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (resp) => {

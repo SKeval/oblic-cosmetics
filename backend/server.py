@@ -218,6 +218,10 @@ class RazorpayVerify(BaseModel):
     razorpay_signature: str
 
 
+class RazorpayCancel(BaseModel):
+    razorpay_order_id: str
+
+
 class OrderStatusUpdate(BaseModel):
     status: str
 
@@ -454,6 +458,17 @@ async def verify_razorpay(payload: RazorpayVerify):
     if order and order.get("email"):
         await db.abandoned_carts.delete_many({"email": order["email"]})
     return {"status": "paid", "order": order}
+
+
+@api_router.post("/payments/razorpay/cancel")
+async def cancel_razorpay_order(payload: RazorpayCancel):
+    # Only flips orders still in "created" (never-completed checkout) so this can never
+    # clobber a status that already progressed via a real payment/verification.
+    result = await db.orders.update_one(
+        {"razorpay_order_id": payload.razorpay_order_id, "status": "created"},
+        {"$set": {"status": "cancelled"}},
+    )
+    return {"ok": True, "cancelled": result.modified_count > 0}
 
 
 # ---------- Abandoned Cart ----------

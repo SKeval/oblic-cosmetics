@@ -54,6 +54,7 @@ export const getPaymentConfig = () => api.get("/payments/config").then((r) => r.
 export const getPincodeState = (pincode) => api.get(`/pincode/${pincode}`).then((r) => r.data);
 export const createRazorpayOrder = (data, headers) => api.post("/payments/razorpay/order", data, { headers }).then((r) => r.data);
 export const verifyRazorpayPayment = (data) => api.post("/payments/razorpay/verify", data).then((r) => r.data);
+export const cancelRazorpayOrder = (razorpay_order_id) => api.post("/payments/razorpay/cancel", { razorpay_order_id }).then((r) => r.data);
 export const saveAbandonedCart = (data) => api.post("/abandoned-cart", data).then((r) => r.data);
 export const getAdminOrders = () => api.get("/admin/orders").then((r) => r.data);
 export const updateOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status }).then((r) => r.data);
