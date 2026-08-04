@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { ArrowRight, Check, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2, SlidersHorizontal, X } from "lucide-react";
 import { getCategories, getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
+import StarRating from "../components/StarRating";
 
 const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
@@ -15,6 +16,33 @@ const CATS = [
 ];
 
 const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Paraben & Sulphate Free", "Made in India", "Free Shipping Across India"];
+
+const TESTIMONIALS = [
+  {
+    name: "Meera Nair", city: "Bengaluru", rating: 5, product: "Rosemary Methi Shampoo",
+    body: "I've tried at least five ‘natural’ shampoos before this one and always went back to my old bottle. Not this time — my scalp actually feels calm after washing, no tightness, and the fenugreek smell is subtle, not overpowering. Three bottles in now.",
+  },
+  {
+    name: "Rohan Kapoor", city: "New Delhi", rating: 5, product: "Fenugreek Hair Oil",
+    body: "Started using this after my barber pointed out patchy hair fall near my temples. Oil it Thursday night, wash Saturday morning — that's my routine now. Four months in and the new growth is actually visible in photos. Wish the bottle was bigger honestly.",
+  },
+  {
+    name: "Divya Iyer", city: "Chennai", rating: 4, product: "Niacinamide Face Serum",
+    body: "Good serum, does what niacinamide is supposed to do — my acne marks have faded quite a bit in about six weeks. Only reason it's not five stars is the dropper is a little fiddly, tends to spill a drop. Would still recommend.",
+  },
+  {
+    name: "Aisha Sheikh", city: "Hyderabad", rating: 5, product: "Rosemary Methi Shampoo",
+    body: "Hyderabad summers destroy my hair every year so I was ready to be disappointed again. Genuinely surprised — no frizz, no itchy scalp two days after washing. My mother uses it now too.",
+  },
+  {
+    name: "Nikhil Deshmukh", city: "Pune", rating: 5, product: "Fenugreek Hair Oil",
+    body: "My mother used to make fenugreek oil at home and this is the closest I've found to that smell and result, minus the mess of actually cooking it myself. Scalp itching I'd had for months is finally gone.",
+  },
+  {
+    name: "Kavya Reddy", city: "Mumbai", rating: 5, product: "Niacinamide Face Serum",
+    body: "Ordered on a whim during a sale and it's become the one product I'd repurchase without thinking twice. Skin looks less patchy under makeup and a coworker asked what I was using, which never happens. Delivery took 4 days to Mumbai, well packed.",
+  },
+];
 
 const SORTS = [
   { v: "featured", label: "Featured" },
@@ -216,6 +244,34 @@ export default function Home() {
                 <span className="absolute bottom-5 left-5 font-display text-cream text-2xl">{c.name}</span>
               </button>
             )
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="container py-20" data-testid="testimonials-section">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <p className="text-[12px] tracking-[0.22em] uppercase text-muted mb-3">Loved Across India</p>
+            <h2 className="font-display text-4xl md:text-5xl leading-none">What Our Customers Say</h2>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.name} className="bg-paper rounded-[3px] p-6 border border-line/60" data-testid={`testimonial-${t.name.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-[15px]">{t.name}</span>
+                  <span className="text-muted text-[13px]"> · {t.city}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <StarRating value={t.rating} size={13} />
+                <span className="text-[11px] text-sage-deep flex items-center gap-1"><CheckCircle2 size={12} /> Verified Buyer</span>
+              </div>
+              <p className="text-ink-soft text-[14.5px] leading-relaxed mt-3">{t.body}</p>
+              <p className="text-[12px] text-muted mt-4 pt-4 border-t border-line/60">Purchased: {t.product}</p>
+            </div>
           ))}
         </div>
       </section>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useCustomer } from "../context/CustomerContext";
-import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, cancelRazorpayOrder, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState } from "../api";
+import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, cancelRazorpayOrder, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState, applyCoupon } from "../api";
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
@@ -32,8 +32,38 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [gatewayEnabled, setGatewayEnabled] = useState(true);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
   const shipping = 0;
-  const total = subtotal + shipping;
+  const discount = appliedCoupon?.discount_amount || 0;
+  const total = Math.max(subtotal - discount + shipping, 0);
+
+  const handleApplyCoupon = async () => {
+    setCouponError("");
+    if (!couponInput.trim()) return;
+    if (!form.email.trim()) {
+      setCouponError("Enter your email above first, then apply the code.");
+      return;
+    }
+    setCouponLoading(true);
+    try {
+      const applied = await applyCoupon(couponInput.trim(), form.email.trim(), subtotal);
+      setAppliedCoupon(applied);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err?.response?.data?.detail || "Couldn't apply that code. Please try again.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError("");
+  };
 
   // Resolved via the pincode -> state lookup once the pincode field is complete and valid.
   const pincodeStateMismatch = () => {
@@ -123,6 +153,7 @@ export default function Checkout() {
         items: items.map((i) => ({ product_id: i.product_id, name: i.name, price: i.price, size: i.size, image: i.image, qty: i.qty })),
         name: form.name, email: form.email, address: form.address, contact: form.contact,
         pincode: form.pincode, state: form.state,
+        coupon_code: appliedCoupon?.code || undefined,
       };
       const data = await createRazorpayOrder(payload, customer ? customerAuthHeaders() : undefined);
 
@@ -275,8 +306,34 @@ export default function Checkout() {
               ))}
             </div>
           )}
-          <div className="border-t border-line mt-6 pt-4 space-y-2 text-[14px]">
+
+          <div className="mt-6 pt-4 border-t border-line">
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between bg-sage/40 border border-sage-deep/40 rounded-full pl-4 pr-2 py-2" data-testid="coupon-applied">
+                <span className="text-[13px] text-ink flex items-center gap-1.5">
+                  <Check size={14} className="text-sage-deep" /> <strong>{appliedCoupon.code}</strong> applied — {appliedCoupon.percent}% off
+                </span>
+                <button type="button" onClick={removeCoupon} data-testid="coupon-remove"
+                  className="text-[12px] text-muted hover:text-ink underline underline-offset-2 px-2">Remove</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Coupon code"
+                  data-testid="coupon-input" className="flex-1 min-w-0 bg-paper border border-line rounded-full px-4 py-2.5 text-[13.5px] outline-none focus:border-ink" />
+                <button type="button" onClick={handleApplyCoupon} disabled={couponLoading || !couponInput.trim()} data-testid="coupon-apply-btn"
+                  className="text-[12px] tracking-[0.1em] uppercase border border-ink rounded-full px-5 py-2.5 hover:bg-ink hover:text-cream transition-colors disabled:opacity-50 whitespace-nowrap">
+                  {couponLoading ? "…" : "Apply"}
+                </button>
+              </div>
+            )}
+            {couponError && <p className="text-red-600 text-[12.5px] mt-2 pl-1" data-testid="coupon-error">{couponError}</p>}
+          </div>
+
+          <div className="border-t border-line mt-4 pt-4 space-y-2 text-[14px]">
             <div className="flex justify-between"><span className="text-ink-soft">Subtotal</span><span>₹{subtotal.toFixed(0)}</span></div>
+            {discount > 0 && (
+              <div className="flex justify-between text-sage-deep"><span>Discount ({appliedCoupon.code})</span><span>−₹{discount.toFixed(0)}</span></div>
+            )}
             <div className="flex justify-between"><span className="text-ink-soft">Shipping</span><span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(0)}`}</span></div>
             <div className="flex justify-between font-display text-xl pt-2"><span>Total</span><span>₹{total.toFixed(0)}</span></div>
           </div>

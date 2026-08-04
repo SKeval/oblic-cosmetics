@@ -141,6 +141,31 @@ INDIAN_MOBILE_RE = re.compile(r"^[6-9]\d{9}$")
 INDIAN_PINCODE_RE = re.compile(r"^[1-9]\d{5}$")
 STATE_ALIASES = {"pondicherry": "puducherry", "orissa": "odisha", "nct of delhi": "delhi"}
 
+COUPONS = {
+    "OBLIC10": {"percent": 10, "first_order_only": True},
+}
+
+
+async def has_prior_paid_order(email: str) -> bool:
+    existing = await db.orders.find_one({
+        "email": {"$regex": f"^{re.escape(email.strip())}$", "$options": "i"},
+        "status": "paid",
+    })
+    return existing is not None
+
+
+async def evaluate_coupon(code: str, email: str, subtotal: float) -> dict:
+    """Raises HTTPException(400) on any invalid/inapplicable code; otherwise returns
+    {code, percent, discount_amount}. Always recomputed server-side - the client never
+    gets to say how much a coupon is worth."""
+    coupon = COUPONS.get((code or "").strip().upper())
+    if not coupon:
+        raise HTTPException(status_code=400, detail="This coupon code isn't valid.")
+    if coupon.get("first_order_only") and await has_prior_paid_order(email):
+        raise HTTPException(status_code=400, detail="This code is only valid on your first order.")
+    discount_amount = round(subtotal * coupon["percent"] / 100, 2)
+    return {"code": code.strip().upper(), "percent": coupon["percent"], "discount_amount": discount_amount}
+
 
 def normalize_state(s: str) -> str:
     key = s.strip().lower()
@@ -187,6 +212,7 @@ class RazorpayOrderCreate(BaseModel):
     contact: str
     pincode: str
     state: str
+    coupon_code: Optional[str] = None
 
     @field_validator("contact")
     @classmethod
@@ -220,6 +246,12 @@ class RazorpayVerify(BaseModel):
 
 class RazorpayCancel(BaseModel):
     razorpay_order_id: str
+
+
+class CouponApply(BaseModel):
+    code: str
+    email: EmailStr
+    subtotal: float
 
 
 class OrderStatusUpdate(BaseModel):
@@ -361,6 +393,12 @@ async def get_pincode_state(pincode: str):
     return {"pincode": pincode, "state": state}
 
 
+# ---------- Coupons ----------
+@api_router.post("/coupons/apply")
+async def apply_coupon(payload: CouponApply):
+    return await evaluate_coupon(payload.code, payload.email, payload.subtotal)
+
+
 # ---------- Razorpay Payments ----------
 @api_router.get("/payments/config")
 async def payments_config():
@@ -381,7 +419,15 @@ async def create_razorpay_order(payload: RazorpayOrderCreate, customer: Optional
             detail=f"This PIN code belongs to {resolved_state}, not {payload.state}. Please check your address.",
         )
 
-    total = round(sum(i.price * i.qty for i in payload.items), 2)
+    subtotal = round(sum(i.price * i.qty for i in payload.items), 2)
+    coupon_code = None
+    discount_amount = 0.0
+    if payload.coupon_code:
+        applied = await evaluate_coupon(payload.coupon_code, payload.email, subtotal)
+        coupon_code = applied["code"]
+        discount_amount = applied["discount_amount"]
+
+    total = round(subtotal - discount_amount, 2)
     amount_paise = int(round(total * 100))
     order_number = "OBL" + str(uuid.uuid4().int)[:8]
 
@@ -408,6 +454,9 @@ async def create_razorpay_order(payload: RazorpayOrderCreate, customer: Optional
         "contact": payload.contact,
         "pincode": payload.pincode,
         "state": payload.state,
+        "subtotal": subtotal,
+        "coupon_code": coupon_code,
+        "discount_amount": discount_amount,
         "total": total,
         "status": "created",
         "customer_id": customer["id"] if customer else None,
@@ -425,6 +474,9 @@ async def create_razorpay_order(payload: RazorpayOrderCreate, customer: Optional
         "name": payload.name,
         "email": payload.email,
         "contact": payload.contact,
+        "subtotal": subtotal,
+        "coupon_code": coupon_code,
+        "discount_amount": discount_amount,
         "total": total,
     }
 
