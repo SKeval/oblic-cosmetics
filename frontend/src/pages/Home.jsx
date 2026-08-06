@@ -68,14 +68,15 @@ export default function Home() {
   const category = searchParams.get("category") || "All";
   const onSale = searchParams.get("on_sale") === "true";
   const sort = searchParams.get("sort") || "featured";
+  const search = searchParams.get("search") || "";
 
   useEffect(() => { getCategories().then(setCats).catch(() => {}); }, []);
 
   const load = useCallback(() => {
     setLoading(true);
-    getProducts({ category, on_sale: onSale || undefined, sort })
+    getProducts({ category, on_sale: onSale || undefined, sort, search: search || undefined })
       .then(setProducts).catch(() => {}).finally(() => setLoading(false));
-  }, [category, onSale, sort]);
+  }, [category, onSale, sort, search]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -96,7 +97,7 @@ export default function Home() {
   };
 
   const clearAll = () => setSearchParams(new URLSearchParams());
-  const activeCount = (category !== "All" ? 1 : 0) + (onSale ? 1 : 0);
+  const activeCount = (category !== "All" ? 1 : 0) + (onSale ? 1 : 0) + (search ? 1 : 0);
 
   return (
     <div>
@@ -197,8 +198,18 @@ export default function Home() {
 
           <div>
             <div className="flex items-baseline justify-between mb-6">
-              <h3 className="font-display text-3xl">{category === "All" ? "All Products" : category}</h3>
-              <span className="text-[13px] text-muted" data-testid="result-count">{products.length} products</span>
+              <h3 className="font-display text-3xl">
+                {search ? `Results for "${search}"` : category === "All" ? "All Products" : category}
+              </h3>
+              <span className="flex items-center gap-3">
+                {search && (
+                  <button onClick={() => update("search", null)} data-testid="clear-search"
+                    className="flex items-center gap-1 text-[13px] text-muted hover:text-ink transition-colors">
+                    <X size={13} /> Clear search
+                  </button>
+                )}
+                <span className="text-[13px] text-muted" data-testid="result-count">{products.length} products</span>
+              </span>
             </div>
             {loading ? (
               <div className={`grid grid-cols-2 ${showFilters ? "md:grid-cols-3" : "md:grid-cols-4"} gap-x-5 gap-y-12`}>
@@ -207,7 +218,9 @@ export default function Home() {
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <p className="text-muted py-20 text-center">No products match your filters.</p>
+              <p className="text-muted py-20 text-center">
+                {search ? `No products match "${search}".` : "No products match your filters."}
+              </p>
             ) : (
               <div className={`grid grid-cols-2 ${showFilters ? "md:grid-cols-3" : "md:grid-cols-4"} gap-x-5 gap-y-12`} data-testid="product-grid">
                 {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}

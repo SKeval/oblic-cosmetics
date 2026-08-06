@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut } from "lucide-react";
-import { getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken } from "../api";
+import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut, Plus, Pencil, Trash2, X } from "lucide-react";
+import {
+  getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
+  getProducts, createProduct, updateProduct, deleteProduct,
+} from "../api";
 
 const STATUS_OPTIONS = ["created", "paid", "fulfilled", "cancelled", "verification_failed"];
 
@@ -12,6 +15,126 @@ const STATUS_STYLE = {
   cancelled: "bg-red-100 text-red-700",
   verification_failed: "bg-red-100 text-red-700",
 };
+
+const BADGE_OPTIONS = ["", "Best Seller", "New", "Limited Offer", "Award Winning", "20% Off"];
+
+const EMPTY_PRODUCT_FORM = {
+  name: "", category: "", price: "", compare_at_price: "", on_sale: false, badge: "",
+  images: "", sizes: "", description: "", benefits: "", how_to_use: "", ingredients: "", detail: "",
+};
+
+function productToForm(p) {
+  return {
+    name: p.name || "", category: p.category || "", price: p.price ?? "", compare_at_price: p.compare_at_price ?? "",
+    on_sale: !!p.on_sale, badge: p.badges?.[0] || "",
+    images: (p.images || []).join("\n"), sizes: (p.sizes || []).join(", "),
+    description: p.description || "", benefits: (p.benefits || []).join("\n"),
+    how_to_use: p.how_to_use || "", ingredients: p.ingredients || "", detail: p.detail || "",
+  };
+}
+
+function formToPayload(f) {
+  return {
+    name: f.name.trim(),
+    category: f.category.trim(),
+    price: Number(f.price),
+    compare_at_price: f.compare_at_price === "" ? null : Number(f.compare_at_price),
+    on_sale: f.on_sale,
+    badges: f.badge ? [f.badge] : [],
+    images: f.images.split("\n").map((s) => s.trim()).filter(Boolean),
+    sizes: f.sizes.split(",").map((s) => s.trim()).filter(Boolean),
+    description: f.description.trim(),
+    benefits: f.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
+    how_to_use: f.how_to_use.trim(),
+    ingredients: f.ingredients.trim(),
+    detail: f.detail.trim(),
+  };
+}
+
+function ProductForm({ initial, onCancel, onSaved }) {
+  const isEdit = !!initial?.id;
+  const [form, setForm] = useState(initial ? productToForm(initial) : EMPTY_PRODUCT_FORM);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.name.trim() || !form.category.trim() || !form.price) {
+      setError("Name, category and price are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = formToPayload(form);
+      const saved = isEdit ? await updateProduct(initial.id, payload) : await createProduct(payload);
+      onSaved(saved);
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Could not save the product. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 flex items-start justify-center overflow-y-auto py-10 px-4" data-testid="product-form-overlay">
+      <div className="bg-paper rounded-[4px] w-full max-w-2xl p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-3xl">{isEdit ? "Edit Product" : "Add Product"}</h2>
+          <button onClick={onCancel} aria-label="Close" data-testid="product-form-close"><X size={22} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <input required value={form.name} onChange={set("name")} placeholder="Product name" data-testid="product-name"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            <input required value={form.category} onChange={set("category")} placeholder="Category (e.g. Skincare)" data-testid="product-category"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <input required type="number" min="1" step="0.01" value={form.price} onChange={set("price")} placeholder="Price (₹)" data-testid="product-price"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            <input type="number" min="0" step="0.01" value={form.compare_at_price} onChange={set("compare_at_price")} placeholder="Compare-at price (₹)" data-testid="product-compare-price"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            <select value={form.badge} onChange={set("badge")} data-testid="product-badge"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink cursor-pointer">
+              {BADGE_OPTIONS.map((b) => <option key={b} value={b}>{b || "No badge"}</option>)}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-[14px]">
+            <input type="checkbox" checked={form.on_sale} onChange={(e) => setForm({ ...form, on_sale: e.target.checked })} data-testid="product-on-sale" />
+            On sale (shows on the Offers page)
+          </label>
+          <textarea value={form.images} onChange={set("images")} placeholder="Image URLs, one per line" rows={2} data-testid="product-images"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <input value={form.sizes} onChange={set("sizes")} placeholder="Sizes, comma separated (e.g. 100ml, 200ml)" data-testid="product-sizes"
+            className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+          <textarea required value={form.description} onChange={set("description")} placeholder="Description" rows={3} data-testid="product-description"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <textarea value={form.benefits} onChange={set("benefits")} placeholder="Benefits, one per line" rows={3} data-testid="product-benefits"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <textarea value={form.how_to_use} onChange={set("how_to_use")} placeholder="How to use" rows={2} data-testid="product-how-to-use"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <textarea value={form.ingredients} onChange={set("ingredients")} placeholder="Ingredients" rows={2} data-testid="product-ingredients"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <textarea value={form.detail} onChange={set("detail")} placeholder="Additional detail (size, storage, etc.)" rows={2} data-testid="product-detail"
+            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+
+          {error && <p className="text-red-600 text-[13px]" data-testid="product-form-error">{error}</p>}
+
+          <div className="flex items-center gap-3 pt-2">
+            <button type="submit" disabled={saving} data-testid="product-form-submit"
+              className="bg-plum text-cream px-6 py-3 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors disabled:opacity-50">
+              {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Product"}
+            </button>
+            <button type="button" onClick={onCancel} className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function Stat({ icon: Icon, label, value }) {
   return (
@@ -33,14 +156,30 @@ export default function Admin() {
   const [orders, setOrders] = useState([]);
   const [carts, setCarts] = useState([]);
   const [stats, setStats] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [productForm, setProductForm] = useState(null); // null | "new" | product object being edited
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [o, c, s] = await Promise.all([getAdminOrders(), getAbandonedCarts(), getAdminStats()]);
-      setOrders(o); setCarts(c); setStats(s);
+      const [o, c, s, p] = await Promise.all([getAdminOrders(), getAbandonedCarts(), getAdminStats(), getProducts()]);
+      setOrders(o); setCarts(c); setStats(s); setProducts(p);
     } finally { setLoading(false); }
+  };
+
+  const onProductSaved = (saved) => {
+    setProducts((prev) => {
+      const exists = prev.some((p) => p.id === saved.id);
+      return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
+    });
+    setProductForm(null);
+  };
+
+  const removeProduct = async (product) => {
+    if (!window.confirm(`Delete "${product.name}"? This can't be undone.`)) return;
+    await deleteProduct(product.id);
+    setProducts((prev) => prev.filter((p) => p.id !== product.id));
   };
 
   useEffect(() => {
@@ -124,13 +263,21 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-line mb-6">
-        {[["orders", "Orders"], ["abandoned", "Abandoned Carts"]].map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
-            className={`px-5 py-3 text-[14px] tracking-wide border-b-2 -mb-px transition-colors ${tab === k ? "border-plum text-ink" : "border-transparent text-muted hover:text-ink"}`}>
-            {label}
+      <div className="flex items-center justify-between border-b border-line mb-6">
+        <div className="flex gap-2">
+          {[["orders", "Orders"], ["abandoned", "Abandoned Carts"], ["products", "Products"]].map(([k, label]) => (
+            <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
+              className={`px-5 py-3 text-[14px] tracking-wide border-b-2 -mb-px transition-colors ${tab === k ? "border-plum text-ink" : "border-transparent text-muted hover:text-ink"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {tab === "products" && (
+          <button onClick={() => setProductForm("new")} data-testid="add-product-btn"
+            className="flex items-center gap-2 bg-plum text-cream rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:bg-ink transition-colors mb-3">
+            <Plus size={15} /> Add Product
           </button>
-        ))}
+        )}
       </div>
 
       {loading ? (
@@ -178,7 +325,7 @@ export default function Admin() {
             </table>
           </div>
         )
-      ) : (
+      ) : tab === "abandoned" ? (
         carts.length === 0 ? <p className="text-muted py-16 text-center">No abandoned carts.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-[14px]" data-testid="abandoned-table">
@@ -210,11 +357,72 @@ export default function Admin() {
             </table>
           </div>
         )
+      ) : (
+        products.length === 0 ? <p className="text-muted py-16 text-center">No products yet — add your first one.</p> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[14px]" data-testid="products-table">
+              <thead>
+                <tr className="text-left text-muted text-[12px] tracking-[0.1em] uppercase border-b border-line">
+                  <th className="py-3 pr-4">Product</th>
+                  <th className="py-3 pr-4">Category</th>
+                  <th className="py-3 pr-4">Price</th>
+                  <th className="py-3 pr-4">Offer</th>
+                  <th className="py-3 pr-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id} className="border-b border-line/60 align-top" data-testid={`product-row-${p.slug}`}>
+                    <td className="py-4 pr-4">
+                      <div className="flex items-center gap-3">
+                        {p.images?.[0] && <img src={p.images[0]} alt={p.name} className="w-11 h-13 object-cover rounded-[2px]" />}
+                        <div>
+                          <div className="font-medium">{p.name}</div>
+                          {p.badges?.[0] && <div className="text-muted text-[12px]">{p.badges[0]}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 pr-4">{p.category}</td>
+                    <td className="py-4 pr-4 whitespace-nowrap">
+                      ₹{Number(p.price).toFixed(0)}
+                      {p.compare_at_price && <span className="text-muted line-through ml-2 text-[12px]">₹{Number(p.compare_at_price).toFixed(0)}</span>}
+                    </td>
+                    <td className="py-4 pr-4">
+                      {p.on_sale ? (
+                        <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-green-100 text-green-800">On Sale</span>
+                      ) : (
+                        <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink">Regular</span>
+                      )}
+                    </td>
+                    <td className="py-4 pr-4">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setProductForm(p)} aria-label="Edit" data-testid={`edit-product-${p.slug}`} className="text-muted hover:text-ink transition-colors">
+                          <Pencil size={16} />
+                        </button>
+                        <button onClick={() => removeProduct(p)} aria-label="Delete" data-testid={`delete-product-${p.slug}`} className="text-muted hover:text-red-600 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       <div className="mt-10">
         <Link to="/" className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Back to store</Link>
       </div>
+
+      {productForm && (
+        <ProductForm
+          initial={productForm === "new" ? null : productForm}
+          onCancel={() => setProductForm(null)}
+          onSaved={onProductSaved}
+        />
+      )}
     </div>
   );
 }

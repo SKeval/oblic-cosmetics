@@ -172,6 +172,21 @@ def normalize_state(s: str) -> str:
     return STATE_ALIASES.get(key, key)
 
 
+def slugify(text: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return s or str(uuid.uuid4())[:8]
+
+
+async def unique_product_slug(name: str) -> str:
+    base = slugify(name)
+    slug = base
+    n = 1
+    while await db.products.find_one({"slug": slug}):
+        n += 1
+        slug = f"{base}-{n}"
+    return slug
+
+
 async def lookup_pincode_state(pincode: str) -> Optional[str]:
     """Best-effort PIN code -> state lookup via India Post's public API. Returns None
     (rather than raising) on any failure so a flaky third party never blocks checkout."""
@@ -258,6 +273,62 @@ class OrderStatusUpdate(BaseModel):
     status: str
 
 
+DEFAULT_FEATURES = ["For All Hair Types", "Paraben Free", "Not Tested on Animals", "100% Made in India"]
+
+
+class ProductCreate(BaseModel):
+    name: str
+    category: str
+    price: float
+    compare_at_price: Optional[float] = None
+    on_sale: bool = False
+    brand: str = "Oblic"
+    images: List[str] = Field(default_factory=list)
+    badges: List[str] = Field(default_factory=list)
+    sizes: List[str] = Field(default_factory=list)
+    description: str = ""
+    benefits: List[str] = Field(default_factory=list)
+    how_to_use: str = ""
+    ingredients: str = ""
+    detail: str = ""
+    features: List[str] = Field(default_factory=lambda: list(DEFAULT_FEATURES))
+    featured_rank: Optional[int] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v):
+        v = v.strip()
+        if not v:
+            raise ValueError("Product name is required")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def validate_price(cls, v):
+        if v <= 0:
+            raise ValueError("Price must be greater than 0")
+        return v
+
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    price: Optional[float] = None
+    compare_at_price: Optional[float] = None
+    on_sale: Optional[bool] = None
+    brand: Optional[str] = None
+    images: Optional[List[str]] = None
+    badges: Optional[List[str]] = None
+    sizes: Optional[List[str]] = None
+    description: Optional[str] = None
+    benefits: Optional[List[str]] = None
+    how_to_use: Optional[str] = None
+    ingredients: Optional[str] = None
+    detail: Optional[str] = None
+    features: Optional[List[str]] = None
+    featured_rank: Optional[int] = None
+
+
 class AbandonedCart(BaseModel):
     email: EmailStr
     name: Optional[str] = ""
@@ -314,7 +385,7 @@ async def get_products(
     elif sort == "rating":
         products.sort(key=lambda p: p.get("rating", 0), reverse=True)
     else:
-        products.sort(key=lambda p: p.get("featured_rank", 999))
+        products.sort(key=lambda p: p.get("featured_rank") if p.get("featured_rank") is not None else 999)
 
     return products
 
@@ -627,6 +698,48 @@ async def admin_stats(admin=Depends(require_admin)):
         "revenue": revenue,
         "abandoned_carts": abandoned,
     }
+
+
+@api_router.post("/admin/products")
+async def admin_create_product(payload: ProductCreate, admin=Depends(require_admin)):
+    slug = await unique_product_slug(payload.name)
+    product = {
+        "id": str(uuid.uuid4()),
+        "slug": slug,
+        **payload.model_dump(),
+        "rating": 0,
+        "review_count": 0,
+        "created_at": now_iso(),
+    }
+    await db.products.insert_one(dict(product))
+    product.pop("_id", None)
+    return product
+
+
+@api_router.patch("/admin/products/{product_id}")
+async def admin_update_product(product_id: str, payload: ProductUpdate, admin=Depends(require_admin)):
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    if "name" in updates and updates["name"] is not None:
+        updates["name"] = updates["name"].strip()
+        if not updates["name"]:
+            raise HTTPException(status_code=400, detail="Product name is required")
+    if "price" in updates and updates["price"] is not None and updates["price"] <= 0:
+        raise HTTPException(status_code=400, detail="Price must be greater than 0")
+    result = await db.products.update_one({"id": product_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return product
+
+
+@api_router.delete("/admin/products/{product_id}")
+async def admin_delete_product(product_id: str, admin=Depends(require_admin)):
+    result = await db.products.delete_one({"id": product_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"ok": True}
 
 
 # ---------- Customer ----------

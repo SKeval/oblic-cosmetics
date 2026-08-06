@@ -12,7 +12,18 @@ const NAV = [
 export default function Navbar() {
   const { count, setOpen } = useCart();
   const [mobile, setMobile] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
   const navigate = useNavigate();
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    navigate(`/?search=${encodeURIComponent(q)}#shop`);
+    setSearchOpen(false);
+    setMobile(false);
+  };
 
   return (
     <>
@@ -41,8 +52,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-5">
-            <button onClick={() => navigate("/#shop")} className="hover:opacity-60 transition-opacity" data-testid="search-btn" aria-label="Search">
-              <Search size={19} strokeWidth={1.5} />
+            <button onClick={() => setSearchOpen((s) => !s)} className="hover:opacity-60 transition-opacity" data-testid="search-btn" aria-label="Search">
+              {searchOpen ? <X size={19} strokeWidth={1.5} /> : <Search size={19} strokeWidth={1.5} />}
             </button>
             <button onClick={() => setOpen(true)} className="relative hover:opacity-60 transition-opacity" data-testid="cart-btn" aria-label="Cart">
               <ShoppingBag size={19} strokeWidth={1.5} />
@@ -60,6 +71,25 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+        {searchOpen && (
+          <div className="border-t border-line bg-paper anim-fade-in" data-testid="search-bar">
+            <form onSubmit={submitSearch} className="container flex items-center gap-3 py-4">
+              <Search size={18} className="text-muted shrink-0" strokeWidth={1.5} />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search products…"
+                data-testid="search-input"
+                className="flex-1 bg-transparent outline-none text-[15px] placeholder:text-muted"
+              />
+              <button type="submit" data-testid="search-submit"
+                className="text-[13px] tracking-[0.1em] uppercase bg-ink text-cream px-5 py-2.5 rounded-full hover:bg-plum transition-colors">
+                Search
+              </button>
+            </form>
+          </div>
+        )}
       </header>
 
       {mobile && (
