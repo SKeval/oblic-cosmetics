@@ -63,7 +63,7 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const category = searchParams.get("category") || "All";
   const onSale = searchParams.get("on_sale") === "true";
@@ -270,8 +270,8 @@ export default function Home() {
           </div>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="bg-paper rounded-[3px] p-6 border border-line/60" data-testid={`testimonial-${t.name.toLowerCase().replace(/\s+/g, "-")}`}>
+          {TESTIMONIALS.map((t, i) => (
+            <div key={t.name} className={`bg-paper rounded-[3px] p-6 border border-line/60 ${i >= 3 ? "hidden lg:block" : ""}`} data-testid={`testimonial-${t.name.toLowerCase().replace(/\s+/g, "-")}`}>
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-medium text-[15px]">{t.name}</span>
