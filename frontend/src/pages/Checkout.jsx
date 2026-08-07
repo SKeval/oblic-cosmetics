@@ -252,7 +252,7 @@ export default function Checkout() {
             {fieldErrors.address && <p className="text-red-600 text-[12.5px] pl-1" data-testid="err-address">{fieldErrors.address}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <input required value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
                 onBlur={checkPincode} placeholder="Pincode" inputMode="numeric" maxLength={6}

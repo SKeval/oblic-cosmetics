@@ -263,11 +263,11 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="flex items-center justify-between border-b border-line mb-6">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-y-3 border-b border-line mb-6">
+        <div className="flex gap-1 overflow-x-auto">
           {[["orders", "Orders"], ["abandoned", "Abandoned Carts"], ["products", "Products"]].map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
-              className={`px-5 py-3 text-[14px] tracking-wide border-b-2 -mb-px transition-colors ${tab === k ? "border-plum text-ink" : "border-transparent text-muted hover:text-ink"}`}>
+              className={`px-4 sm:px-5 py-3 text-[14px] tracking-wide border-b-2 -mb-px whitespace-nowrap transition-colors ${tab === k ? "border-plum text-ink" : "border-transparent text-muted hover:text-ink"}`}>
               {label}
             </button>
           ))}
@@ -375,7 +375,7 @@ export default function Admin() {
                   <tr key={p.id} className="border-b border-line/60 align-top" data-testid={`product-row-${p.slug}`}>
                     <td className="py-4 pr-4">
                       <div className="flex items-center gap-3">
-                        {p.images?.[0] && <img src={p.images[0]} alt={p.name} className="w-11 h-13 object-cover rounded-[2px]" />}
+                        {p.images?.[0] && <img src={p.images[0]} alt={p.name} className="w-11 h-14 object-cover rounded-[2px]" />}
                         <div>
                           <div className="font-medium">{p.name}</div>
                           {p.badges?.[0] && <div className="text-muted text-[12px]">{p.badges[0]}</div>}

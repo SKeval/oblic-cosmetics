@@ -125,7 +125,7 @@ export default function ProductDetail() {
             <p className="text-[13px] text-muted mt-4">Ships free the week of your order.</p>
 
             {/* Features */}
-            <div className="grid grid-cols-4 gap-2 mt-8 bg-cream-deep/50 rounded-[3px] p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-2 gap-y-5 mt-8 bg-cream-deep/50 rounded-[3px] p-5">
               {product.features.map((f, i) => {
                 const Icon = FEATURE_ICONS[i % FEATURE_ICONS.length];
                 return (

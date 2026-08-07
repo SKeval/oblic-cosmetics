@@ -41,7 +41,7 @@ export default function ProductCard({ product, index = 0 }) {
           <button
             onClick={(e) => { e.preventDefault(); addItem(product, product.sizes?.[0]); }}
             data-testid={`quick-add-${product.id}`}
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 bg-plum text-cream text-[12px] tracking-[0.12em] uppercase px-6 py-3 rounded-full flex items-center gap-2 hover:bg-ink whitespace-nowrap"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 lg:translate-y-4 lg:opacity-0 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition-all duration-300 bg-plum text-cream text-[12px] tracking-[0.12em] uppercase px-6 py-3 rounded-full flex items-center gap-2 hover:bg-ink whitespace-nowrap"
           >
             <ShoppingBag size={14} /> Add to Cart
           </button>

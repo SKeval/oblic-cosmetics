@@ -24,7 +24,7 @@ export default function CartDrawer() {
           >
             <div className="flex items-center justify-between p-6 border-b border-line">
               <h2 className="font-display text-2xl">Your Bag</h2>
-              <button onClick={() => setOpen(false)} data-testid="cart-close" aria-label="Close"><X size={22} /></button>
+              <button onClick={() => setOpen(false)} className="p-2 -mr-2" data-testid="cart-close" aria-label="Close"><X size={22} /></button>
             </div>
 
             {items.length === 0 ? (
@@ -45,14 +45,14 @@ export default function CartDrawer() {
                         {i.size && <p className="text-[13px] text-muted mt-0.5">{i.size}</p>}
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center border border-line rounded-full">
-                            <button onClick={() => updateQty(i.key, i.qty - 1)} className="p-1.5" aria-label="Decrease"><Minus size={13} /></button>
+                            <button onClick={() => updateQty(i.key, i.qty - 1)} className="p-2.5" aria-label="Decrease"><Minus size={13} /></button>
                             <span className="w-7 text-center text-[13px]">{i.qty}</span>
-                            <button onClick={() => updateQty(i.key, i.qty + 1)} className="p-1.5" aria-label="Increase"><Plus size={13} /></button>
+                            <button onClick={() => updateQty(i.key, i.qty + 1)} className="p-2.5" aria-label="Increase"><Plus size={13} /></button>
                           </div>
                           <span className="text-[14px]">₹{(i.price * i.qty).toFixed(0)}</span>
                         </div>
                       </div>
-                      <button onClick={() => removeItem(i.key)} className="text-muted hover:text-ink self-start" aria-label="Remove"><X size={16} /></button>
+                      <button onClick={() => removeItem(i.key)} className="text-muted hover:text-ink self-start p-2 -m-2" aria-label="Remove"><X size={16} /></button>
                     </div>
                   ))}
                 </div>
