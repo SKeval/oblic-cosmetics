@@ -51,6 +51,15 @@ function formToPayload(f) {
   };
 }
 
+function Field({ label, children }) {
+  return (
+    <div>
+      <label className="block text-[12px] tracking-[0.12em] uppercase text-muted mb-2">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 function ImageUploader({ images, onChange }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -169,38 +178,60 @@ function ProductForm({ initial, onCancel, onSaved }) {
         </div>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <input required value={form.name} onChange={set("name")} placeholder="Product name" data-testid="product-name"
-              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
-            <input required value={form.category} onChange={set("category")} placeholder="Category (e.g. Skincare)" data-testid="product-category"
-              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            <Field label="Product Name">
+              <input required value={form.name} onChange={set("name")} placeholder="e.g. Niacinamide Face Serum" data-testid="product-name"
+                className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            </Field>
+            <Field label="Category">
+              <input required value={form.category} onChange={set("category")} placeholder="e.g. Skincare" data-testid="product-category"
+                className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            </Field>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            <input required type="number" min="1" step="0.01" value={form.price} onChange={set("price")} placeholder="Price (₹)" data-testid="product-price"
-              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
-            <input type="number" min="0" step="0.01" value={form.compare_at_price} onChange={set("compare_at_price")} placeholder="Compare-at price (₹)" data-testid="product-compare-price"
-              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
-            <select value={form.badge} onChange={set("badge")} data-testid="product-badge"
-              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink cursor-pointer">
-              {BADGE_OPTIONS.map((b) => <option key={b} value={b}>{b || "No badge"}</option>)}
-            </select>
+            <Field label="Price (₹)">
+              <input required type="number" min="1" step="0.01" value={form.price} onChange={set("price")} placeholder="e.g. 540" data-testid="product-price"
+                className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            </Field>
+            <Field label="Compare-at Price (₹)">
+              <input type="number" min="0" step="0.01" value={form.compare_at_price} onChange={set("compare_at_price")} placeholder="Optional, e.g. 675" data-testid="product-compare-price"
+                className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+            </Field>
+            <Field label="Badge">
+              <select value={form.badge} onChange={set("badge")} data-testid="product-badge"
+                className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink cursor-pointer">
+                {BADGE_OPTIONS.map((b) => <option key={b} value={b}>{b || "No badge"}</option>)}
+              </select>
+            </Field>
           </div>
           <label className="flex items-center gap-2 text-[14px]">
             <input type="checkbox" checked={form.on_sale} onChange={(e) => setForm({ ...form, on_sale: e.target.checked })} data-testid="product-on-sale" />
             On sale (shows on the Offers page)
           </label>
           <ImageUploader images={form.images} onChange={(images) => setForm({ ...form, images })} />
-          <input value={form.sizes} onChange={set("sizes")} placeholder="Sizes, comma separated (e.g. 100ml, 200ml)" data-testid="product-sizes"
-            className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
-          <textarea required value={form.description} onChange={set("description")} placeholder="Description" rows={3} data-testid="product-description"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
-          <textarea value={form.benefits} onChange={set("benefits")} placeholder="Benefits, one per line" rows={3} data-testid="product-benefits"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
-          <textarea value={form.how_to_use} onChange={set("how_to_use")} placeholder="How to use" rows={2} data-testid="product-how-to-use"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
-          <textarea value={form.ingredients} onChange={set("ingredients")} placeholder="Ingredients" rows={2} data-testid="product-ingredients"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
-          <textarea value={form.detail} onChange={set("detail")} placeholder="Additional detail (size, storage, etc.)" rows={2} data-testid="product-detail"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <Field label="Sizes">
+            <input value={form.sizes} onChange={set("sizes")} placeholder="Comma separated, e.g. 100ml, 200ml" data-testid="product-sizes"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+          </Field>
+          <Field label="Description">
+            <textarea required value={form.description} onChange={set("description")} placeholder="Shown on the product page" rows={3} data-testid="product-description"
+              className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          </Field>
+          <Field label="Benefits">
+            <textarea value={form.benefits} onChange={set("benefits")} placeholder="One per line" rows={3} data-testid="product-benefits"
+              className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          </Field>
+          <Field label="How to Use">
+            <textarea value={form.how_to_use} onChange={set("how_to_use")} placeholder="e.g. Apply 2-3 drops to clean, dry skin" rows={2} data-testid="product-how-to-use"
+              className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          </Field>
+          <Field label="Ingredients">
+            <textarea value={form.ingredients} onChange={set("ingredients")} placeholder="e.g. Niacinamide, Hyaluronic Acid, Glycerin" rows={2} data-testid="product-ingredients"
+              className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          </Field>
+          <Field label="Additional Detail">
+            <textarea value={form.detail} onChange={set("detail")} placeholder="e.g. size, storage instructions" rows={2} data-testid="product-detail"
+              className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          </Field>
 
           {error && <p className="text-red-600 text-[13px]" data-testid="product-form-error">{error}</p>}
 
