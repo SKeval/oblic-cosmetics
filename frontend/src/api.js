@@ -61,6 +61,11 @@ export const getAdminOrders = () => api.get("/admin/orders").then((r) => r.data)
 export const updateOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status }).then((r) => r.data);
 export const getAbandonedCarts = () => api.get("/admin/abandoned-carts").then((r) => r.data);
 export const getAdminStats = () => api.get("/admin/stats").then((r) => r.data);
+export const uploadImage = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.post("/admin/upload", formData).then((r) => r.data);
+};
 export const createProduct = (data) => api.post("/admin/products", data).then((r) => r.data);
 export const updateProduct = (id, data) => api.patch(`/admin/products/${id}`, data).then((r) => r.data);
 export const deleteProduct = (id) => api.delete(`/admin/products/${id}`).then((r) => r.data);

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut, Plus, Pencil, Trash2, X, Star } from "lucide-react";
 import {
   getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
-  getProducts, createProduct, updateProduct, deleteProduct,
+  getProducts, createProduct, updateProduct, deleteProduct, uploadImage,
 } from "../api";
 
 const STATUS_OPTIONS = ["created", "paid", "fulfilled", "cancelled", "verification_failed"];
@@ -20,14 +20,14 @@ const BADGE_OPTIONS = ["", "Best Seller", "New", "Limited Offer", "Award Winning
 
 const EMPTY_PRODUCT_FORM = {
   name: "", category: "", price: "", compare_at_price: "", on_sale: false, badge: "",
-  images: "", sizes: "", description: "", benefits: "", how_to_use: "", ingredients: "", detail: "",
+  images: [], sizes: "", description: "", benefits: "", how_to_use: "", ingredients: "", detail: "",
 };
 
 function productToForm(p) {
   return {
     name: p.name || "", category: p.category || "", price: p.price ?? "", compare_at_price: p.compare_at_price ?? "",
     on_sale: !!p.on_sale, badge: p.badges?.[0] || "",
-    images: (p.images || []).join("\n"), sizes: (p.sizes || []).join(", "),
+    images: p.images || [], sizes: (p.sizes || []).join(", "),
     description: p.description || "", benefits: (p.benefits || []).join("\n"),
     how_to_use: p.how_to_use || "", ingredients: p.ingredients || "", detail: p.detail || "",
   };
@@ -41,7 +41,7 @@ function formToPayload(f) {
     compare_at_price: f.compare_at_price === "" ? null : Number(f.compare_at_price),
     on_sale: f.on_sale,
     badges: f.badge ? [f.badge] : [],
-    images: f.images.split("\n").map((s) => s.trim()).filter(Boolean),
+    images: f.images.filter(Boolean),
     sizes: f.sizes.split(",").map((s) => s.trim()).filter(Boolean),
     description: f.description.trim(),
     benefits: f.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
@@ -49,6 +49,88 @@ function formToPayload(f) {
     ingredients: f.ingredients.trim(),
     detail: f.detail.trim(),
   };
+}
+
+function ImageUploader({ images, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+
+  const uploadFiles = async (fileList) => {
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+    setError("");
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        if (file.size > 8 * 1024 * 1024) {
+          setError(`"${file.name}" is over 8MB and was skipped.`);
+          continue;
+        }
+        const { url } = await uploadImage(file);
+        uploaded.push(url);
+      }
+      if (uploaded.length) onChange([...images, ...uploaded]);
+    } catch (err) {
+      setError("Couldn't upload one or more photos. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAt = (i) => onChange(images.filter((_, idx) => idx !== i));
+  const makeMain = (i) => {
+    const next = [...images];
+    const [item] = next.splice(i, 1);
+    onChange([item, ...next]);
+  };
+
+  return (
+    <div>
+      <label className="block text-[12px] tracking-[0.12em] uppercase text-muted mb-2">Product Photos</label>
+      <div className="flex flex-wrap gap-3">
+        {images.map((url, i) => (
+          <div key={url + i} className="relative w-24 h-24 rounded-[8px] overflow-hidden border border-line group">
+            <img src={url} alt="" className="w-full h-full object-cover" />
+            {i === 0 && (
+              <span className="absolute top-1 left-1 flex items-center gap-1 bg-ink text-cream text-[9px] px-1.5 py-0.5 rounded-full">
+                <Star size={9} fill="currentColor" /> Main
+              </span>
+            )}
+            {i !== 0 && (
+              <button type="button" onClick={() => makeMain(i)}
+                className="absolute inset-x-0 bottom-0 bg-ink/70 text-cream text-[9px] py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                Make main
+              </button>
+            )}
+            <button type="button" onClick={() => removeAt(i)} aria-label="Remove photo"
+              className="absolute top-1 right-1 bg-ink/70 text-cream rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <X size={12} />
+            </button>
+          </div>
+        ))}
+        <label
+          data-testid="product-image-upload"
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); uploadFiles(e.dataTransfer.files); }}
+          className={`w-24 h-24 rounded-[8px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer text-muted hover:text-ink hover:border-ink transition-colors ${dragOver ? "border-ink text-ink bg-cream" : "border-line"}`}
+        >
+          {uploading ? <RefreshCw size={18} className="animate-spin" /> : (
+            <>
+              <Plus size={18} />
+              <span className="text-[10px] mt-1 text-center px-1">Add Photo</span>
+            </>
+          )}
+          <input type="file" accept="image/*" multiple hidden disabled={uploading}
+            onChange={(e) => { uploadFiles(e.target.files); e.target.value = ""; }} />
+        </label>
+      </div>
+      <p className="text-[11px] text-muted mt-2">First photo is used as the main listing image. Hover a photo to remove it or make it the main one.</p>
+      {error && <p className="text-red-600 text-[12px] mt-1">{error}</p>}
+    </div>
+  );
 }
 
 function ProductForm({ initial, onCancel, onSaved }) {
@@ -106,8 +188,7 @@ function ProductForm({ initial, onCancel, onSaved }) {
             <input type="checkbox" checked={form.on_sale} onChange={(e) => setForm({ ...form, on_sale: e.target.checked })} data-testid="product-on-sale" />
             On sale (shows on the Offers page)
           </label>
-          <textarea value={form.images} onChange={set("images")} placeholder="Image URLs, one per line" rows={2} data-testid="product-images"
-            className="w-full bg-cream border border-line rounded-[16px] px-5 py-3 outline-none focus:border-ink resize-none" />
+          <ImageUploader images={form.images} onChange={(images) => setForm({ ...form, images })} />
           <input value={form.sizes} onChange={set("sizes")} placeholder="Sizes, comma separated (e.g. 100ml, 200ml)" data-testid="product-sizes"
             className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
           <textarea required value={form.description} onChange={set("description")} placeholder="Description" rows={3} data-testid="product-description"

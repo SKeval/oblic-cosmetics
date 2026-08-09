@@ -1,6 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -14,6 +15,8 @@ import razorpay
 import bcrypt
 import jwt
 import httpx
+import cloudinary
+import cloudinary.uploader
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -33,6 +36,14 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'oblic-dev-secret')
 JWT_ALGORITHM = "HS256"
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '')
+
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET', ''),
+    secure=True,
+)
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
 def hash_password(password: str) -> str:
@@ -698,6 +709,22 @@ async def admin_stats(admin=Depends(require_admin)):
         "revenue": revenue,
         "abandoned_carts": abandoned,
     }
+
+
+@api_router.post("/admin/upload")
+async def admin_upload_image(file: UploadFile = File(...), admin=Depends(require_admin)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="Image is too large (max 8MB)")
+    try:
+        result = await run_in_threadpool(
+            cloudinary.uploader.upload, contents, folder="oblic-products", resource_type="image"
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="Image upload failed. Please try again.")
+    return {"url": result["secure_url"]}
 
 
 @api_router.post("/admin/products")
