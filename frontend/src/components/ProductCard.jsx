@@ -26,7 +26,7 @@ export default function ProductCard({ product, index = 0 }) {
       data-testid={`product-card-${product.id}`}
     >
       <Link to={`/product/${product.id}`} className="block">
-        <div className="relative aspect-[2/3] bg-cream-deep overflow-hidden rounded-[2px]">
+        <div className="relative aspect-square bg-cream-deep overflow-hidden rounded-[2px]">
           {product.badges?.[0] && (
             <span className={`absolute top-3 left-3 z-10 text-[11px] tracking-[0.08em] px-3 py-1 rounded-full ${BADGE_STYLE[product.badges[0]] || "bg-cream text-ink"}`} data-testid="product-badge">
               {product.badges[0]}
