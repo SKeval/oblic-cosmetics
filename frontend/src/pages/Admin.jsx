@@ -402,6 +402,7 @@ export default function Admin() {
                 <tr className="text-left text-muted text-[12px] tracking-[0.1em] uppercase border-b border-line">
                   <th className="py-3 pr-4">Order</th>
                   <th className="py-3 pr-4">Customer</th>
+                  <th className="py-3 pr-4">Ship To</th>
                   <th className="py-3 pr-4">Items</th>
                   <th className="py-3 pr-4">Total</th>
                   <th className="py-3 pr-4">Date</th>
@@ -416,6 +417,14 @@ export default function Admin() {
                       <div>{o.name}</div>
                       <div className="text-muted text-[12px]">{o.email}</div>
                       {o.contact && <div className="text-muted text-[12px]">{o.contact}</div>}
+                    </td>
+                    <td className="py-4 pr-4 max-w-[220px] text-[13px]">
+                      {o.address ? (
+                        <>
+                          <div>{o.address}</div>
+                          <div className="text-muted">{[o.pincode, o.state].filter(Boolean).join(", ")}</div>
+                        </>
+                      ) : <span className="text-muted">-</span>}
                     </td>
                     <td className="py-4 pr-4 max-w-[260px]">
                       {(o.items || []).map((it, i) => (
