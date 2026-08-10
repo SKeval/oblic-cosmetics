@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import { CustomerProvider } from "@/context/CustomerContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
@@ -13,8 +14,11 @@ import About from "@/pages/About";
 import Terms from "@/pages/Terms";
 import RefundPolicy from "@/pages/RefundPolicy";
 import ShippingPolicy from "@/pages/ShippingPolicy";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import NotFound from "@/pages/NotFound";
 import Admin from "@/pages/Admin";
 import Account from "@/pages/Account";
+import ResetPassword from "@/pages/ResetPassword";
 
 // The Shop page was merged into Home's "Shop All" section (#shop) — keep old /shop
 // links (bookmarks, search results) working by redirecting to it, search params intact.
@@ -38,26 +42,31 @@ function App() {
   return (
     <BrowserRouter>
       <CustomerProvider>
-        <CartProvider>
-          <ScrollToTop />
-          <Navbar />
-          <CartDrawer />
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<ShopRedirect />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
-              <Route path="/shipping-policy" element={<ShippingPolicy />} />
-              <Route path="/admin" element={<Admin />} />
-            </Routes>
-          </main>
-          <Footer />
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <ScrollToTop />
+            <Navbar />
+            <CartDrawer />
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<ShopRedirect />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
+                <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <Footer />
+          </CartProvider>
+        </WishlistProvider>
       </CustomerProvider>
     </BrowserRouter>
   );

@@ -18,6 +18,7 @@ const COLS = [
     { label: "Terms & Conditions", to: "/terms" },
     { label: "Refund Policy", to: "/refund-policy" },
     { label: "Shipping Policy", to: "/shipping-policy" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
   ]},
 ];
 
@@ -108,6 +109,7 @@ export default function Footer() {
             <Link to="/terms" className="hover:text-ink transition-colors" data-testid="footer-terms">Terms & Conditions</Link>
             <Link to="/refund-policy" className="hover:text-ink transition-colors" data-testid="footer-refund">Refund Policy</Link>
             <Link to="/shipping-policy" className="hover:text-ink transition-colors" data-testid="footer-shipping">Shipping Policy</Link>
+            <Link to="/privacy-policy" className="hover:text-ink transition-colors" data-testid="footer-privacy">Privacy Policy</Link>
           </div>
         </div>
       </div>

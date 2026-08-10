@@ -4,12 +4,14 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import asyncio
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from typing import List, Optional
 import uuid
 import re
+import secrets
 from datetime import datetime, timezone, timedelta
 import razorpay
 import bcrypt
@@ -44,6 +46,29 @@ cloudinary.config(
     secure=True,
 )
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', 'Oblic Cosmetics <onboarding@resend.dev>')
+SITE_URL = os.environ.get('SITE_URL', 'https://www.obliccosmetic.com')
+
+
+async def send_email(to: str, subject: str, html: str):
+    """Best-effort email send via Resend. Never raises - a failed/unconfigured email
+    provider should never break checkout or password reset."""
+    if not RESEND_API_KEY:
+        logger.warning(f"RESEND_API_KEY not set; skipping email to {to}: {subject}")
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+                json={"from": RESEND_FROM_EMAIL, "to": [to], "subject": subject, "html": html},
+            )
+            if resp.status_code >= 400:
+                logger.error(f"Resend email failed ({resp.status_code}) to {to}: {resp.text}")
+    except Exception as e:
+        logger.error(f"Resend email send raised for {to}: {e}")
 
 
 def hash_password(password: str) -> str:
@@ -281,7 +306,9 @@ class CouponApply(BaseModel):
 
 
 class OrderStatusUpdate(BaseModel):
-    status: str
+    status: Optional[str] = None
+    tracking_number: Optional[str] = None
+    carrier: Optional[str] = None
 
 
 DEFAULT_FEATURES = ["For All Hair Types", "Paraben Free", "Not Tested on Animals", "100% Made in India"]
@@ -304,6 +331,7 @@ class ProductCreate(BaseModel):
     detail: str = ""
     features: List[str] = Field(default_factory=lambda: list(DEFAULT_FEATURES))
     featured_rank: Optional[int] = None
+    in_stock: bool = True
 
     @field_validator("name")
     @classmethod
@@ -338,6 +366,7 @@ class ProductUpdate(BaseModel):
     detail: Optional[str] = None
     features: Optional[List[str]] = None
     featured_rank: Optional[int] = None
+    in_stock: Optional[bool] = None
 
 
 class AbandonedCart(BaseModel):
@@ -360,6 +389,22 @@ class CustomerRegister(BaseModel):
 class CustomerLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+
+class ResetPassword(BaseModel):
+    token: str
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        return v
 
 
 # ---------- Routes ----------
@@ -591,7 +636,31 @@ async def verify_razorpay(payload: RazorpayVerify):
     order = await db.orders.find_one({"razorpay_order_id": payload.razorpay_order_id}, {"_id": 0})
     if order and order.get("email"):
         await db.abandoned_carts.delete_many({"email": order["email"]})
+        asyncio.create_task(send_order_confirmation_email(order))
     return {"status": "paid", "order": order}
+
+
+async def send_order_confirmation_email(order: dict):
+    items_html = "".join(
+        f"<tr><td style='padding:6px 0'>{i['qty']}× {i['name']}{' (' + i['size'] + ')' if i.get('size') else ''}</td>"
+        f"<td style='padding:6px 0;text-align:right'>₹{i['price'] * i['qty']:.0f}</td></tr>"
+        for i in order.get("items", [])
+    )
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
+      <h2 style="margin-bottom:4px">Thank you for your order, {order.get('name', '')}!</h2>
+      <p style="color:#666;margin-top:0">Order #{order.get('order_number')}</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0">{items_html}
+        <tr><td style="padding-top:12px;border-top:1px solid #ddd;font-weight:bold">Total</td>
+        <td style="padding-top:12px;border-top:1px solid #ddd;text-align:right;font-weight:bold">₹{order.get('total', 0):.0f}</td></tr>
+      </table>
+      <p style="margin-bottom:4px"><strong>Shipping to:</strong></p>
+      <p style="color:#444;margin-top:0">{order.get('address', '')}<br/>{order.get('pincode', '')}, {order.get('state', '')}</p>
+      <p style="color:#666;font-size:13px;margin-top:32px">We'll email you again once your order ships. Questions? Just reply to this email or reach us on WhatsApp.</p>
+      <p style="color:#999;font-size:12px">Oblic Cosmetics</p>
+    </div>
+    """
+    await send_email(order["email"], f"Order confirmed — #{order.get('order_number')}", html)
 
 
 @api_router.post("/payments/razorpay/cancel")
@@ -668,6 +737,45 @@ async def customer_login(payload: CustomerLogin):
     return {"token": token, "email": customer["email"], "name": customer.get("name", "")}
 
 
+GENERIC_RESET_MESSAGE = "If that email has an account, we've sent a password reset link to it."
+
+
+@api_router.post("/auth/customer/forgot-password")
+async def forgot_password(payload: ForgotPassword):
+    email = payload.email.lower()
+    customer = await db.customers.find_one({"email": email})
+    if customer:
+        token = secrets.token_urlsafe(32)
+        await db.password_resets.delete_many({"email": email})
+        await db.password_resets.insert_one({
+            "email": email,
+            "token": token,
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+            "created_at": now_iso(),
+        })
+        reset_link = f"{SITE_URL}/reset-password?token={token}"
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1a1a">
+          <h2>Reset your password</h2>
+          <p style="color:#444">Click the button below to set a new password. This link expires in 1 hour.</p>
+          <p><a href="{reset_link}" style="display:inline-block;background:#3d1f33;color:#fff;padding:12px 24px;border-radius:24px;text-decoration:none">Reset Password</a></p>
+          <p style="color:#999;font-size:12px">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+        """
+        await send_email(email, "Reset your Oblic password", html)
+    return {"message": GENERIC_RESET_MESSAGE}
+
+
+@api_router.post("/auth/customer/reset-password")
+async def reset_password(payload: ResetPassword):
+    record = await db.password_resets.find_one({"token": payload.token})
+    if not record or record["expires_at"] < now_iso():
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+    await db.customers.update_one({"email": record["email"]}, {"$set": {"password_hash": hash_password(payload.password)}})
+    await db.password_resets.delete_many({"email": record["email"]})
+    return {"ok": True}
+
+
 @api_router.get("/auth/customer/me")
 async def customer_me(customer=Depends(require_customer)):
     return customer
@@ -683,7 +791,10 @@ async def admin_orders(admin=Depends(require_admin)):
 
 @api_router.patch("/admin/orders/{order_id}")
 async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=Depends(require_admin)):
-    result = await db.orders.update_one({"id": order_id}, {"$set": {"status": payload.status}})
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = await db.orders.update_one({"id": order_id}, {"$set": updates})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
@@ -770,6 +881,31 @@ async def admin_delete_product(product_id: str, admin=Depends(require_admin)):
 
 
 # ---------- Customer ----------
+@api_router.get("/customer/wishlist")
+async def get_wishlist(customer=Depends(require_customer)):
+    doc = await db.customers.find_one({"id": customer["id"]}, {"_id": 0, "wishlist": 1})
+    product_ids = (doc or {}).get("wishlist", [])
+    if not product_ids:
+        return []
+    products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(500)
+    return products
+
+
+@api_router.post("/customer/wishlist/{product_id}")
+async def add_to_wishlist(product_id: str, customer=Depends(require_customer)):
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    await db.customers.update_one({"id": customer["id"]}, {"$addToSet": {"wishlist": product_id}})
+    return {"ok": True}
+
+
+@api_router.delete("/customer/wishlist/{product_id}")
+async def remove_from_wishlist(product_id: str, customer=Depends(require_customer)):
+    await db.customers.update_one({"id": customer["id"]}, {"$pull": {"wishlist": product_id}})
+    return {"ok": True}
+
+
 @api_router.get("/customer/orders")
 async def customer_orders(customer=Depends(require_customer)):
     orders = await db.orders.find(

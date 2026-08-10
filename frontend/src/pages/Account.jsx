@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
 import { useCustomer } from "../context/CustomerContext";
-import { getCustomerOrders } from "../api";
+import { useWishlist } from "../context/WishlistContext";
+import { getCustomerOrders, forgotPassword } from "../api";
+import ProductCard from "../components/ProductCard";
 
 export default function Account() {
   const { customer, loading, login, register, logout } = useCustomer();
+  const { items: wishlistItems } = useWishlist();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const next = searchParams.get("next");
@@ -15,6 +18,10 @@ export default function Account() {
   const [authLoading, setAuthLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     if (!customer) return;
@@ -34,6 +41,20 @@ export default function Account() {
       setAuthError(err?.response?.data?.detail || "Something went wrong. Please try again.");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const submitForgot = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMsg("");
+    try {
+      await forgotPassword(forgotEmail);
+      setForgotMsg("If that email has an account, we've sent a password reset link to it.");
+    } catch {
+      setForgotMsg("If that email has an account, we've sent a password reset link to it.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -81,6 +102,27 @@ export default function Account() {
               {authLoading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
             </button>
           </form>
+
+          {mode === "login" && (
+            <div className="mt-4 text-center">
+              <button type="button" onClick={() => { setForgotOpen((o) => !o); setForgotMsg(""); }} data-testid="account-forgot-toggle"
+                className="text-[13px] text-muted hover:text-ink underline underline-offset-4">
+                Forgot password?
+              </button>
+              {forgotOpen && (
+                <form onSubmit={submitForgot} className="mt-4 space-y-3 text-left">
+                  <input required type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="Your email"
+                    data-testid="account-forgot-email" className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink text-[14px]" />
+                  <button type="submit" disabled={forgotLoading} data-testid="account-forgot-submit"
+                    className="w-full border border-ink rounded-full py-2.5 text-[13px] tracking-wide hover:bg-ink hover:text-cream transition-colors disabled:opacity-50">
+                    {forgotLoading ? "Sending…" : "Send reset link"}
+                  </button>
+                  {forgotMsg && <p className="text-[13px] text-ink-soft" data-testid="account-forgot-msg">{forgotMsg}</p>}
+                </form>
+              )}
+            </div>
+          )}
+
           <Link to="/" className="block text-center text-[13px] text-muted hover:text-ink mt-6 underline underline-offset-4">Back to store</Link>
         </div>
       </div>
@@ -129,12 +171,24 @@ export default function Account() {
                   <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
                   <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
                   <td className="py-4 pr-4">
-                    <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink">{o.status}</span>
+                    <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink mb-1">{o.status}</span>
+                    {o.tracking_number && (
+                      <div className="text-muted text-[12px]">{o.carrier ? `${o.carrier} — ` : ""}{o.tracking_number}</div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      <h2 className="text-[12px] tracking-[0.1em] uppercase text-muted mt-14 mb-4">Wishlist</h2>
+      {wishlistItems.length === 0 ? (
+        <p className="text-muted py-10 text-center">Nothing saved yet — tap the heart on any product to save it here.</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6" data-testid="account-wishlist">
+          {wishlistItems.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
         </div>
       )}
 

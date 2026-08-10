@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut, Plus, Pencil, Trash2, X, Star } from "lucide-react";
 import {
-  getAdminOrders, updateOrderStatus, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
+  getAdminOrders, updateOrderStatus, updateOrderTracking, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
   getProducts, createProduct, updateProduct, deleteProduct, uploadImage,
 } from "../api";
 
@@ -19,14 +19,14 @@ const STATUS_STYLE = {
 const BADGE_OPTIONS = ["", "Best Seller", "New", "Limited Offer", "Award Winning", "20% Off"];
 
 const EMPTY_PRODUCT_FORM = {
-  name: "", category: "", price: "", compare_at_price: "", on_sale: false, badge: "",
+  name: "", category: "", price: "", compare_at_price: "", on_sale: false, badge: "", in_stock: true,
   images: [], sizes: "", description: "", benefits: "", how_to_use: "", ingredients: "", detail: "",
 };
 
 function productToForm(p) {
   return {
     name: p.name || "", category: p.category || "", price: p.price ?? "", compare_at_price: p.compare_at_price ?? "",
-    on_sale: !!p.on_sale, badge: p.badges?.[0] || "",
+    on_sale: !!p.on_sale, badge: p.badges?.[0] || "", in_stock: p.in_stock !== false,
     images: p.images || [], sizes: (p.sizes || []).join(", "),
     description: p.description || "", benefits: (p.benefits || []).join("\n"),
     how_to_use: p.how_to_use || "", ingredients: p.ingredients || "", detail: p.detail || "",
@@ -40,6 +40,7 @@ function formToPayload(f) {
     price: Number(f.price),
     compare_at_price: f.compare_at_price === "" ? null : Number(f.compare_at_price),
     on_sale: f.on_sale,
+    in_stock: f.in_stock,
     badges: f.badge ? [f.badge] : [],
     images: f.images.filter(Boolean),
     sizes: f.sizes.split(",").map((s) => s.trim()).filter(Boolean),
@@ -203,10 +204,16 @@ function ProductForm({ initial, onCancel, onSaved }) {
               </select>
             </Field>
           </div>
-          <label className="flex items-center gap-2 text-[14px]">
-            <input type="checkbox" checked={form.on_sale} onChange={(e) => setForm({ ...form, on_sale: e.target.checked })} data-testid="product-on-sale" />
-            On sale (shows on the Offers page)
-          </label>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <label className="flex items-center gap-2 text-[14px]">
+              <input type="checkbox" checked={form.on_sale} onChange={(e) => setForm({ ...form, on_sale: e.target.checked })} data-testid="product-on-sale" />
+              On sale (shows on the Offers page)
+            </label>
+            <label className="flex items-center gap-2 text-[14px]">
+              <input type="checkbox" checked={form.in_stock} onChange={(e) => setForm({ ...form, in_stock: e.target.checked })} data-testid="product-in-stock" />
+              In stock (uncheck to hide "Add to Cart" and show "Out of Stock")
+            </label>
+          </div>
           <ImageUploader images={form.images} onChange={(images) => setForm({ ...form, images })} />
           <Field label="Sizes">
             <input value={form.sizes} onChange={set("sizes")} placeholder="Comma separated, e.g. 100ml, 200ml" data-testid="product-sizes"
@@ -244,6 +251,35 @@ function ProductForm({ initial, onCancel, onSaved }) {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function TrackingCell({ order, onSaved }) {
+  const [carrier, setCarrier] = useState(order.carrier || "");
+  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (carrier === (order.carrier || "") && trackingNumber === (order.tracking_number || "")) return;
+    setSaving(true);
+    try {
+      const updated = await updateOrderTracking(order.id, trackingNumber.trim(), carrier.trim());
+      onSaved(updated);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 min-w-[140px]">
+      <input value={carrier} onChange={(e) => setCarrier(e.target.value)} onBlur={save} placeholder="Carrier"
+        data-testid={`order-carrier-${order.order_number}`}
+        className="bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none focus:border-ink" />
+      <input value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} onBlur={save} placeholder="Tracking number"
+        data-testid={`order-tracking-${order.order_number}`}
+        className="bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none focus:border-ink" />
+      {saving && <span className="text-[11px] text-muted">Saving…</span>}
     </div>
   );
 }
@@ -407,6 +443,7 @@ export default function Admin() {
                   <th className="py-3 pr-4">Total</th>
                   <th className="py-3 pr-4">Date</th>
                   <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 pr-4">Tracking</th>
                 </tr>
               </thead>
               <tbody>
@@ -439,6 +476,9 @@ export default function Admin() {
                         className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
                         {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <TrackingCell order={o} onSaved={(updated) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, ...updated } : x)))} />
                     </td>
                   </tr>
                 ))}
@@ -488,6 +528,7 @@ export default function Admin() {
                   <th className="py-3 pr-4">Category</th>
                   <th className="py-3 pr-4">Price</th>
                   <th className="py-3 pr-4">Offer</th>
+                  <th className="py-3 pr-4">Stock</th>
                   <th className="py-3 pr-4">Actions</th>
                 </tr>
               </thead>
@@ -513,6 +554,13 @@ export default function Admin() {
                         <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-green-100 text-green-800">On Sale</span>
                       ) : (
                         <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink">Regular</span>
+                      )}
+                    </td>
+                    <td className="py-4 pr-4">
+                      {p.in_stock !== false ? (
+                        <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-green-100 text-green-800">In Stock</span>
+                      ) : (
+                        <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-red-100 text-red-700">Out of Stock</span>
                       )}
                     </td>
                     <td className="py-4 pr-4">

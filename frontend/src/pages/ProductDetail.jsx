@@ -6,6 +6,7 @@ import { getProduct, getProducts, getReviews, addReview } from "../api";
 import StarRating from "../components/StarRating";
 import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 const FEATURE_ICONS = [FlaskConical, Stethoscope, Leaf, CheckCircle2];
 
@@ -13,6 +14,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { isWishlisted, toggleWishlistItem } = useWishlist();
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -45,6 +47,9 @@ export default function ProductDetail() {
 
   if (!product) return <div className="container py-40 text-center text-muted">Loading…</div>;
 
+  const inStock = product.in_stock !== false;
+  const wishlisted = isWishlisted(product.id);
+  const toggleWishlist = () => toggleWishlistItem(product);
   const avg = product.rating;
   const dist = [5, 4, 3, 2, 1].map((s) => reviews.filter((r) => r.rating === s).length);
 
@@ -108,20 +113,34 @@ export default function ProductDetail() {
             </div>
 
             {/* Add to cart */}
-            <div className="flex items-center gap-3 mt-6">
-              <div className="flex items-center border border-line rounded-full px-1">
-                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-3" data-testid="qty-minus" aria-label="Decrease"><Minus size={15} /></button>
-                <span className="w-8 text-center" data-testid="qty-value">{qty}</span>
-                <button onClick={() => setQty((q) => q + 1)} className="p-3" data-testid="qty-plus" aria-label="Increase"><Plus size={15} /></button>
+            {inStock ? (
+              <div className="flex items-center gap-3 mt-6">
+                <div className="flex items-center border border-line rounded-full px-1">
+                  <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-3" data-testid="qty-minus" aria-label="Decrease"><Minus size={15} /></button>
+                  <span className="w-8 text-center" data-testid="qty-value">{qty}</span>
+                  <button onClick={() => setQty((q) => q + 1)} className="p-3" data-testid="qty-plus" aria-label="Increase"><Plus size={15} /></button>
+                </div>
+                <button onClick={() => addItem(product, size, qty)} data-testid="add-to-cart-btn"
+                  className="flex-1 bg-plum text-cream py-4 rounded-full text-[13px] tracking-[0.14em] uppercase hover:bg-ink transition-colors">
+                  Add to Cart
+                </button>
+                <button onClick={toggleWishlist} data-testid="wishlist-btn" aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  className={`w-[52px] h-[52px] rounded-full border flex items-center justify-center transition-colors ${wishlisted ? "border-plum bg-plum text-cream" : "border-line hover:border-ink"}`}>
+                  <Heart size={18} strokeWidth={1.5} fill={wishlisted ? "currentColor" : "none"} />
+                </button>
               </div>
-              <button onClick={() => addItem(product, size, qty)} data-testid="add-to-cart-btn"
-                className="flex-1 bg-plum text-cream py-4 rounded-full text-[13px] tracking-[0.14em] uppercase hover:bg-ink transition-colors">
-                Add to Cart
-              </button>
-              <button className="w-[52px] h-[52px] rounded-full border border-line flex items-center justify-center hover:border-ink transition-colors" aria-label="Wishlist" data-testid="wishlist-btn">
-                <Heart size={18} strokeWidth={1.5} />
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 mt-6">
+                <button disabled data-testid="add-to-cart-btn"
+                  className="flex-1 bg-cream-deep text-muted py-4 rounded-full text-[13px] tracking-[0.14em] uppercase cursor-not-allowed">
+                  Out of Stock
+                </button>
+                <button onClick={toggleWishlist} data-testid="wishlist-btn" aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  className={`w-[52px] h-[52px] rounded-full border flex items-center justify-center transition-colors ${wishlisted ? "border-plum bg-plum text-cream" : "border-line hover:border-ink"}`}>
+                  <Heart size={18} strokeWidth={1.5} fill={wishlisted ? "currentColor" : "none"} />
+                </button>
+              </div>
+            )}
             <p className="text-[13px] text-muted mt-4">Ships free the week of your order.</p>
 
             {/* Features */}

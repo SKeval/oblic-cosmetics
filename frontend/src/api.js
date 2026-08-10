@@ -40,8 +40,18 @@ export const customerLogin = (email, password) =>
   api.post("/auth/customer/login", { email, password }).then((r) => r.data);
 export const customerMe = () =>
   api.get("/auth/customer/me", { headers: customerAuthHeaders() }).then((r) => r.data);
+export const forgotPassword = (email) =>
+  api.post("/auth/customer/forgot-password", { email }).then((r) => r.data);
+export const resetPassword = (token, password) =>
+  api.post("/auth/customer/reset-password", { token, password }).then((r) => r.data);
 export const getCustomerOrders = () =>
   api.get("/customer/orders", { headers: customerAuthHeaders() }).then((r) => r.data);
+export const getWishlist = () =>
+  api.get("/customer/wishlist", { headers: customerAuthHeaders() }).then((r) => r.data);
+export const addToWishlist = (productId) =>
+  api.post(`/customer/wishlist/${productId}`, {}, { headers: customerAuthHeaders() }).then((r) => r.data);
+export const removeFromWishlist = (productId) =>
+  api.delete(`/customer/wishlist/${productId}`, { headers: customerAuthHeaders() }).then((r) => r.data);
 
 export const getProducts = (params) => api.get("/products", { params }).then((r) => r.data);
 export const getProduct = (id) => api.get(`/products/${id}`).then((r) => r.data);
@@ -59,6 +69,8 @@ export const cancelRazorpayOrder = (razorpay_order_id) => api.post("/payments/ra
 export const saveAbandonedCart = (data) => api.post("/abandoned-cart", data).then((r) => r.data);
 export const getAdminOrders = () => api.get("/admin/orders").then((r) => r.data);
 export const updateOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status }).then((r) => r.data);
+export const updateOrderTracking = (id, tracking_number, carrier) =>
+  api.patch(`/admin/orders/${id}`, { tracking_number, carrier }).then((r) => r.data);
 export const getAbandonedCarts = () => api.get("/admin/abandoned-carts").then((r) => r.data);
 export const getAdminStats = () => api.get("/admin/stats").then((r) => r.data);
 export const uploadImage = (file) => {
