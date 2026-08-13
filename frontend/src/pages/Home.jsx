@@ -9,10 +9,10 @@ const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-be
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", soon: false, img: "/category-skincare.jpg" },
-  { name: "Haircare", soon: false, img: "https://static.prod-images.emergentagent.com/jobs/9cbde7ef-f666-41b7-bd92-6df367c19404/images/aa4daf1a289a885e3ff7e33822d2663887859cb841d434cdebbc36e450beecc3.jpeg" },
-  { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
-  { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
+  { name: "Skincare", soon: false },
+  { name: "Haircare", soon: false },
+  { name: "Makeup", soon: true },
+  { name: "Fragrances", soon: true },
 ];
 
 const MARQUEE = ["Vegan & Cruelty-Free", "Dermatologist Created", "Paraben & Sulphate Free", "Made in India", "Free Shipping Across India"];
@@ -240,21 +240,15 @@ export default function Home() {
           {CATS.map((c) => (
             c.soon ? (
               <div key={c.name} data-testid={`category-soon-${c.name.toLowerCase()}`}
-                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group cursor-default select-none">
-                <img src={c.img} alt={c.name} className="w-full h-full object-cover grayscale-[0.4] transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-plum/85 group-hover:bg-plum/80 transition-colors" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                  <span className="text-[11px] tracking-[0.25em] uppercase text-cream border border-cream/70 rounded-full px-4 py-1.5">Coming Soon</span>
-                  <span className="font-display text-cream text-3xl mt-4">{c.name}</span>
-                  <span className="text-cream/90 text-[12px] mt-1.5">Worth the wait ✦</span>
-                </div>
+                className="relative aspect-[3/4] rounded-[3px] border border-line bg-cream-deep flex flex-col items-center justify-center text-center px-4 cursor-default select-none">
+                <span className="text-[11px] tracking-[0.25em] uppercase text-muted border border-line rounded-full px-4 py-1.5 mb-5">Coming Soon</span>
+                <span className="font-display text-ink text-3xl md:text-4xl">{c.name}</span>
+                <span className="text-muted text-[12px] mt-2">Worth the wait ✦</span>
               </div>
             ) : (
               <button type="button" onClick={() => filterAndScroll("category", c.name)} key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
-                className="relative aspect-[3/4] overflow-hidden rounded-[3px] group text-left">
-                <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-ink/25 group-hover:bg-ink/40 transition-colors" />
-                <span className="absolute bottom-5 left-5 font-display text-cream text-2xl">{c.name}</span>
+                className="group relative aspect-[3/4] rounded-[3px] border border-line bg-cream-deep hover:bg-ink hover:border-ink flex items-center justify-center transition-colors duration-300">
+                <span className="font-display text-ink group-hover:text-cream text-3xl md:text-4xl transition-colors duration-300">{c.name}</span>
               </button>
             )
           ))}
