@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Minus, Heart, ChevronDown, FlaskConical, Stethoscope, Leaf, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
+import { Plus, Minus, Heart, ChevronDown, FlaskConical, Stethoscope, Leaf, CheckCircle2, ArrowRight, ArrowLeft, Star } from "lucide-react";
 import { getProduct, getProducts, getReviews, addReview } from "../api";
 import StarRating from "../components/StarRating";
 import ProductCard from "../components/ProductCard";
@@ -209,7 +209,7 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button type="button" key={n} onClick={() => setForm({ ...form, rating: n })} data-testid={`review-star-${n}`}>
-                      <StarRating value={n <= form.rating ? 5 : 0} size={18} className="!gap-0" />
+                      <Star size={18} strokeWidth={1.5} className={n <= form.rating ? "fill-sage-deep text-sage-deep" : "text-line"} />
                     </button>
                   ))}
                 </div>
