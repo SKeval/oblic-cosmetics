@@ -178,7 +178,7 @@ INDIAN_PINCODE_RE = re.compile(r"^[1-9]\d{5}$")
 STATE_ALIASES = {"pondicherry": "puducherry", "orissa": "odisha", "nct of delhi": "delhi"}
 
 COUPONS = {
-    "OBLIC10": {"percent": 10, "first_order_only": True},
+    "OBLIC20": {"percent": 20, "first_order_only": True},
 }
 
 
@@ -488,7 +488,7 @@ async def subscribe(payload: NewsletterCreate):
     if existing:
         return {"message": "You're already subscribed.", "ok": True}
     await db.newsletter.insert_one({"email": payload.email, "created_at": now_iso()})
-    return {"message": "Welcome to Oblic. Your 10% code is OBLIC10.", "ok": True}
+    return {"message": "Welcome to Oblic. Your 20% code is OBLIC20.", "ok": True}
 
 
 @api_router.post("/orders")

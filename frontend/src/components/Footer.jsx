@@ -45,7 +45,7 @@ export default function Footer() {
         <div className="container py-16 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <p className="text-[12px] tracking-[0.2em] uppercase opacity-70 mb-3">Thoughtfully Curated Gifts</p>
-            <h3 className="font-display text-4xl md:text-5xl leading-[1.05]">Enjoy 10% Off<br />Your First Order</h3>
+            <h3 className="font-display text-4xl md:text-5xl leading-[1.05]">Enjoy 20% Off<br />Your First Order</h3>
             <p className="mt-4 text-cream/70 max-w-md text-[15px]">
               Sign up and receive an exclusive discount code for your first purchase. Join Oblic and elevate your beauty ritual.
             </p>

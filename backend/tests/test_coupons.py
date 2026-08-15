@@ -1,4 +1,4 @@
-"""Backend tests for the OBLIC10 first-order coupon."""
+"""Backend tests for the OBLIC20 first-order coupon (20% off)."""
 import os
 import hmac
 import hashlib
@@ -38,20 +38,20 @@ def _pay_for_order(email, amount):
 # ---------- /coupons/apply ----------
 def test_apply_valid_coupon_first_order():
     email = _fresh_email()
-    r = requests.post(f"{API}/coupons/apply", json={"code": "OBLIC10", "email": email, "subtotal": 500})
+    r = requests.post(f"{API}/coupons/apply", json={"code": "OBLIC20", "email": email, "subtotal": 500})
     assert r.status_code == 200, r.text
     data = r.json()
-    assert data["code"] == "OBLIC10"
-    assert data["percent"] == 10
-    assert data["discount_amount"] == 50.0
+    assert data["code"] == "OBLIC20"
+    assert data["percent"] == 20
+    assert data["discount_amount"] == 100.0
 
 
 def test_apply_coupon_case_insensitive():
     email = _fresh_email()
-    r = requests.post(f"{API}/coupons/apply", json={"code": "oblic10", "email": email, "subtotal": 200})
+    r = requests.post(f"{API}/coupons/apply", json={"code": "oblic20", "email": email, "subtotal": 200})
     assert r.status_code == 200, r.text
-    assert r.json()["code"] == "OBLIC10"
-    assert r.json()["discount_amount"] == 20.0
+    assert r.json()["code"] == "OBLIC20"
+    assert r.json()["discount_amount"] == 40.0
 
 
 def test_apply_invalid_coupon_code():
@@ -64,7 +64,7 @@ def test_apply_invalid_coupon_code():
 def test_apply_coupon_rejected_after_prior_paid_order():
     email = _fresh_email()
     _pay_for_order(email, 250)
-    r = requests.post(f"{API}/coupons/apply", json={"code": "OBLIC10", "email": email, "subtotal": 500})
+    r = requests.post(f"{API}/coupons/apply", json={"code": "OBLIC20", "email": email, "subtotal": 500})
     assert r.status_code == 400
     assert "first order" in r.json()["detail"].lower()
 
@@ -74,15 +74,15 @@ def test_order_creation_applies_discount():
     email = _fresh_email()
     r = requests.post(f"{API}/payments/razorpay/order", json={
         "items": [{"product_id": "p1", "name": "TEST Item", "price": 100, "qty": 1}],
-        "email": email, "name": "TEST Buyer", "coupon_code": "OBLIC10", **VALID_ADDRESS,
+        "email": email, "name": "TEST Buyer", "coupon_code": "OBLIC20", **VALID_ADDRESS,
     })
     assert r.status_code == 200, r.text
     data = r.json()
     assert data["subtotal"] == 100.0
-    assert data["coupon_code"] == "OBLIC10"
-    assert data["discount_amount"] == 10.0
-    assert data["total"] == 90.0
-    assert data["amount"] == 9000  # paise, matches the discounted total, not the subtotal
+    assert data["coupon_code"] == "OBLIC20"
+    assert data["discount_amount"] == 20.0
+    assert data["total"] == 80.0
+    assert data["amount"] == 8000  # paise, matches the discounted total, not the subtotal
 
 
 def test_order_creation_rejects_invalid_coupon():
