@@ -237,7 +237,7 @@ export default function Home() {
           <p className="text-ink-soft text-[14px] max-w-xs hidden md:block">More collections are on the way. New Oblic rituals launching soon.</p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {CATS.map((c, i) => (
+          {CATS.map((c) => (
             c.soon ? (
               <div key={c.name} data-testid={`category-soon-${c.name.toLowerCase()}`}
                 className="relative aspect-[3/4] overflow-hidden rounded-[3px] group cursor-default select-none">
@@ -245,8 +245,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/25 to-transparent" />
                 <span className="absolute top-4 left-5 text-[11px] tracking-[0.25em] uppercase text-cream border border-cream/60 rounded-full px-3.5 py-1.5">Coming Soon</span>
                 <div className="absolute bottom-5 left-5 right-5">
-                  <span className="font-display text-sage text-xl leading-none">{String(i + 1).padStart(2, "0")}</span>
-                  <div className="font-display text-cream text-2xl mt-1">{c.name}</div>
+                  <div className="font-display text-cream text-2xl">{c.name}</div>
                   <span className="text-cream/80 text-[12px] mt-1 block">Worth the wait ✦</span>
                 </div>
               </div>
@@ -256,8 +255,7 @@ export default function Home() {
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/10 to-transparent group-hover:from-ink/90 transition-colors" />
                 <div className="absolute bottom-5 left-5">
-                  <span className="font-display text-sage text-xl leading-none">{String(i + 1).padStart(2, "0")}</span>
-                  <div className="font-display text-cream text-2xl mt-1">{c.name}</div>
+                  <div className="font-display text-cream text-2xl">{c.name}</div>
                 </div>
               </button>
             )
