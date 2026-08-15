@@ -9,7 +9,7 @@ const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-be
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", soon: false, img: "https://images.unsplash.com/photo-1576426863848-c21f53c60b19?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
+  { name: "Skincare", soon: false, img: "/category-skincare.jpg" },
   { name: "Haircare", soon: false, img: "https://images.unsplash.com/photo-1608571423539-e951b9b3871e?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
