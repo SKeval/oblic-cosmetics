@@ -81,6 +81,10 @@ export const uploadImage = (file) => {
 export const createProduct = (data) => api.post("/admin/products", data).then((r) => r.data);
 export const updateProduct = (id, data) => api.patch(`/admin/products/${id}`, data).then((r) => r.data);
 export const deleteProduct = (id) => api.delete(`/admin/products/${id}`).then((r) => r.data);
+export const getCoupons = () => api.get("/admin/coupons").then((r) => r.data);
+export const createCoupon = (data) => api.post("/admin/coupons", data).then((r) => r.data);
+export const updateCoupon = (id, data) => api.patch(`/admin/coupons/${id}`, data).then((r) => r.data);
+export const deleteCoupon = (id) => api.delete(`/admin/coupons/${id}`).then((r) => r.data);
 
 export function loadRazorpayScript() {
   return new Promise((resolve) => {

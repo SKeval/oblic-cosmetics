@@ -177,11 +177,6 @@ INDIAN_MOBILE_RE = re.compile(r"^[6-9]\d{9}$")
 INDIAN_PINCODE_RE = re.compile(r"^[1-9]\d{5}$")
 STATE_ALIASES = {"pondicherry": "puducherry", "orissa": "odisha", "nct of delhi": "delhi"}
 
-COUPONS = {
-    "OBLIC20": {"percent": 20, "first_order_only": True},
-}
-
-
 async def has_prior_paid_order(email: str) -> bool:
     existing = await db.orders.find_one({
         "email": {"$regex": f"^{re.escape(email.strip())}$", "$options": "i"},
@@ -194,13 +189,15 @@ async def evaluate_coupon(code: str, email: str, subtotal: float) -> dict:
     """Raises HTTPException(400) on any invalid/inapplicable code; otherwise returns
     {code, percent, discount_amount}. Always recomputed server-side - the client never
     gets to say how much a coupon is worth."""
-    coupon = COUPONS.get((code or "").strip().upper())
-    if not coupon:
+    coupon = await db.coupons.find_one({"code": (code or "").strip().upper()})
+    if not coupon or not coupon.get("active", True):
         raise HTTPException(status_code=400, detail="This coupon code isn't valid.")
+    if coupon.get("expires_at") and coupon["expires_at"] < now_iso():
+        raise HTTPException(status_code=400, detail="This coupon code has expired.")
     if coupon.get("first_order_only") and await has_prior_paid_order(email):
         raise HTTPException(status_code=400, detail="This code is only valid on your first order.")
     discount_amount = round(subtotal * coupon["percent"] / 100, 2)
-    return {"code": code.strip().upper(), "percent": coupon["percent"], "discount_amount": discount_amount}
+    return {"code": coupon["code"], "percent": coupon["percent"], "discount_amount": discount_amount}
 
 
 def normalize_state(s: str) -> str:
@@ -303,6 +300,36 @@ class CouponApply(BaseModel):
     code: str
     email: EmailStr
     subtotal: float
+
+
+class CouponCreate(BaseModel):
+    code: str
+    percent: float
+    first_order_only: bool = False
+    active: bool = True
+    expires_at: Optional[str] = None
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, v):
+        v = v.strip().upper()
+        if not v:
+            raise ValueError("Code is required")
+        return v
+
+    @field_validator("percent")
+    @classmethod
+    def validate_percent(cls, v):
+        if not (0 < v <= 100):
+            raise ValueError("Percent off must be between 1 and 100")
+        return v
+
+
+class CouponUpdate(BaseModel):
+    percent: Optional[float] = None
+    first_order_only: Optional[bool] = None
+    active: Optional[bool] = None
+    expires_at: Optional[str] = None
 
 
 class OrderStatusUpdate(BaseModel):
@@ -880,6 +907,46 @@ async def admin_delete_product(product_id: str, admin=Depends(require_admin)):
     return {"ok": True}
 
 
+# ---------- Admin: Coupons ----------
+@api_router.get("/admin/coupons")
+async def admin_list_coupons(admin=Depends(require_admin)):
+    coupons = await db.coupons.find({}, {"_id": 0}).to_list(500)
+    coupons.sort(key=lambda c: c.get("created_at", ""), reverse=True)
+    return coupons
+
+
+@api_router.post("/admin/coupons")
+async def admin_create_coupon(payload: CouponCreate, admin=Depends(require_admin)):
+    if await db.coupons.find_one({"code": payload.code}):
+        raise HTTPException(status_code=400, detail="A coupon with this code already exists")
+    coupon = {"id": str(uuid.uuid4()), **payload.model_dump(), "created_at": now_iso()}
+    await db.coupons.insert_one(dict(coupon))
+    coupon.pop("_id", None)
+    return coupon
+
+
+@api_router.patch("/admin/coupons/{coupon_id}")
+async def admin_update_coupon(coupon_id: str, payload: CouponUpdate, admin=Depends(require_admin)):
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    if "percent" in updates and updates["percent"] is not None and not (0 < updates["percent"] <= 100):
+        raise HTTPException(status_code=400, detail="Percent off must be between 1 and 100")
+    result = await db.coupons.update_one({"id": coupon_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    coupon = await db.coupons.find_one({"id": coupon_id}, {"_id": 0})
+    return coupon
+
+
+@api_router.delete("/admin/coupons/{coupon_id}")
+async def admin_delete_coupon(coupon_id: str, admin=Depends(require_admin)):
+    result = await db.coupons.delete_one({"id": coupon_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    return {"ok": True}
+
+
 # ---------- Customer ----------
 @api_router.get("/customer/wishlist")
 async def get_wishlist(customer=Depends(require_customer)):
@@ -942,6 +1009,13 @@ async def seed_data():
     if await db.reviews.count_documents({}) == 0:
         await db.reviews.insert_many([dict(r) for r in REVIEWS])
         logger.info(f"Seeded {len(REVIEWS)} reviews")
+    if await db.coupons.count_documents({}) == 0:
+        await db.coupons.insert_one({
+            "id": str(uuid.uuid4()), "code": "OBLIC20", "percent": 20,
+            "first_order_only": True, "active": True, "expires_at": None,
+            "created_at": now_iso(),
+        })
+        logger.info("Seeded OBLIC20 coupon")
 
     # Seed / update admin account
     if ADMIN_EMAIL and ADMIN_PASSWORD:

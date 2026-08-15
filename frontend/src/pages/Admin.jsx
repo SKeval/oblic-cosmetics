@@ -4,6 +4,7 @@ import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogO
 import {
   getAdminOrders, updateOrderStatus, updateOrderTracking, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
   getProducts, createProduct, updateProduct, deleteProduct, uploadImage,
+  getCoupons, createCoupon, updateCoupon, deleteCoupon,
 } from "../api";
 
 const STATUS_OPTIONS = ["created", "paid", "fulfilled", "cancelled", "verification_failed"];
@@ -284,6 +285,90 @@ function TrackingCell({ order, onSaved }) {
   );
 }
 
+function CouponForm({ initial, onCancel, onSaved }) {
+  const isEdit = !!initial?.id;
+  const [form, setForm] = useState(initial ? {
+    code: initial.code, percent: initial.percent, first_order_only: initial.first_order_only,
+    active: initial.active, expires_at: initial.expires_at ? initial.expires_at.slice(0, 10) : "",
+  } : { code: "", percent: "", first_order_only: false, active: true, expires_at: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.code.trim() || !form.percent) {
+      setError("Code and percent off are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        percent: Number(form.percent),
+        first_order_only: form.first_order_only,
+        active: form.active,
+        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+      };
+      const saved = isEdit
+        ? await updateCoupon(initial.id, payload)
+        : await createCoupon({ code: form.code, ...payload });
+      onSaved(saved);
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Could not save the discount code. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 flex items-start justify-center overflow-y-auto py-10 px-4" data-testid="coupon-form-overlay">
+      <div className="bg-paper rounded-[4px] w-full max-w-md p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-3xl">{isEdit ? "Edit Discount Code" : "Add Discount Code"}</h2>
+          <button onClick={onCancel} aria-label="Close" data-testid="coupon-form-close"><X size={22} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <Field label="Code">
+            <input required disabled={isEdit} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+              placeholder="e.g. OBLIC20" data-testid="coupon-code"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink disabled:opacity-60" />
+          </Field>
+          <Field label="Percent Off">
+            <input required type="number" min="1" max="100" value={form.percent} onChange={(e) => setForm({ ...form, percent: e.target.value })}
+              placeholder="e.g. 20" data-testid="coupon-percent"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+          </Field>
+          <Field label="Expires (optional)">
+            <input type="date" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+              data-testid="coupon-expires"
+              className="w-full bg-cream border border-line rounded-full px-5 py-3 outline-none focus:border-ink" />
+          </Field>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <label className="flex items-center gap-2 text-[14px]">
+              <input type="checkbox" checked={form.first_order_only} onChange={(e) => setForm({ ...form, first_order_only: e.target.checked })} data-testid="coupon-first-order" />
+              First order only
+            </label>
+            <label className="flex items-center gap-2 text-[14px]">
+              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} data-testid="coupon-active" />
+              Active
+            </label>
+          </div>
+
+          {error && <p className="text-red-600 text-[13px]" data-testid="coupon-form-error">{error}</p>}
+
+          <div className="flex items-center gap-3 pt-2">
+            <button type="submit" disabled={saving} data-testid="coupon-form-submit"
+              className="bg-plum text-cream px-6 py-3 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors disabled:opacity-50">
+              {saving ? "Saving…" : isEdit ? "Save Changes" : "Add Code"}
+            </button>
+            <button type="button" onClick={onCancel} className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function Stat({ icon: Icon, label, value }) {
   return (
     <div className="bg-paper border border-line rounded-[4px] p-6" data-testid={`stat-${label.toLowerCase().replace(/ /g, "-")}`}>
@@ -306,13 +391,15 @@ export default function Admin() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [productForm, setProductForm] = useState(null); // null | "new" | product object being edited
+  const [coupons, setCoupons] = useState([]);
+  const [couponForm, setCouponForm] = useState(null); // null | "new" | coupon object being edited
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [o, c, s, p] = await Promise.all([getAdminOrders(), getAbandonedCarts(), getAdminStats(), getProducts()]);
-      setOrders(o); setCarts(c); setStats(s); setProducts(p);
+      const [o, c, s, p, cp] = await Promise.all([getAdminOrders(), getAbandonedCarts(), getAdminStats(), getProducts(), getCoupons()]);
+      setOrders(o); setCarts(c); setStats(s); setProducts(p); setCoupons(cp);
     } finally { setLoading(false); }
   };
 
@@ -328,6 +415,25 @@ export default function Admin() {
     if (!window.confirm(`Delete "${product.name}"? This can't be undone.`)) return;
     await deleteProduct(product.id);
     setProducts((prev) => prev.filter((p) => p.id !== product.id));
+  };
+
+  const onCouponSaved = (saved) => {
+    setCoupons((prev) => {
+      const exists = prev.some((c) => c.id === saved.id);
+      return exists ? prev.map((c) => (c.id === saved.id ? saved : c)) : [saved, ...prev];
+    });
+    setCouponForm(null);
+  };
+
+  const removeCoupon = async (coupon) => {
+    if (!window.confirm(`Delete code "${coupon.code}"? This can't be undone.`)) return;
+    await deleteCoupon(coupon.id);
+    setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
+  };
+
+  const toggleCouponActive = async (coupon) => {
+    const updated = await updateCoupon(coupon.id, { active: !coupon.active });
+    setCoupons((prev) => prev.map((c) => (c.id === coupon.id ? updated : c)));
   };
 
   useEffect(() => {
@@ -413,7 +519,7 @@ export default function Admin() {
 
       <div className="flex flex-wrap items-center justify-between gap-y-3 border-b border-line mb-6">
         <div className="flex gap-1 overflow-x-auto">
-          {[["orders", "Orders"], ["abandoned", "Abandoned Carts"], ["products", "Products"]].map(([k, label]) => (
+          {[["orders", "Orders"], ["abandoned", "Abandoned Carts"], ["products", "Products"], ["discounts", "Discounts"]].map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
               className={`px-4 sm:px-5 py-3 text-[14px] tracking-wide border-b-2 -mb-px whitespace-nowrap transition-colors ${tab === k ? "border-plum text-ink" : "border-transparent text-muted hover:text-ink"}`}>
               {label}
@@ -424,6 +530,12 @@ export default function Admin() {
           <button onClick={() => setProductForm("new")} data-testid="add-product-btn"
             className="flex items-center gap-2 bg-plum text-cream rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:bg-ink transition-colors mb-3">
             <Plus size={15} /> Add Product
+          </button>
+        )}
+        {tab === "discounts" && (
+          <button onClick={() => setCouponForm("new")} data-testid="add-coupon-btn"
+            className="flex items-center gap-2 bg-plum text-cream rounded-full px-5 py-2.5 text-[13px] tracking-wide hover:bg-ink transition-colors mb-3">
+            <Plus size={15} /> Add Discount Code
           </button>
         )}
       </div>
@@ -518,7 +630,7 @@ export default function Admin() {
             </table>
           </div>
         )
-      ) : (
+      ) : tab === "products" ? (
         products.length === 0 ? <p className="text-muted py-16 text-center">No products yet — add your first one.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-[14px]" data-testid="products-table">
@@ -579,11 +691,62 @@ export default function Admin() {
             </table>
           </div>
         )
+      ) : (
+        coupons.length === 0 ? <p className="text-muted py-16 text-center">No discount codes yet — add your first one.</p> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[14px]" data-testid="coupons-table">
+              <thead>
+                <tr className="text-left text-muted text-[12px] tracking-[0.1em] uppercase border-b border-line">
+                  <th className="py-3 pr-4">Code</th>
+                  <th className="py-3 pr-4">Off</th>
+                  <th className="py-3 pr-4">Rules</th>
+                  <th className="py-3 pr-4">Expires</th>
+                  <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 pr-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map((c) => (
+                  <tr key={c.id} className="border-b border-line/60 align-top" data-testid={`coupon-row-${c.code}`}>
+                    <td className="py-4 pr-4 font-medium">{c.code}</td>
+                    <td className="py-4 pr-4">{c.percent}%</td>
+                    <td className="py-4 pr-4 text-muted text-[13px]">{c.first_order_only ? "First order only" : "Any order"}</td>
+                    <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "Never"}</td>
+                    <td className="py-4 pr-4">
+                      <button onClick={() => toggleCouponActive(c)} data-testid={`toggle-coupon-${c.code}`}
+                        className={`inline-block text-[11px] px-2.5 py-1 rounded-full transition-colors ${c.active ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-cream-deep text-muted hover:bg-line"}`}>
+                        {c.active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setCouponForm(c)} aria-label="Edit" data-testid={`edit-coupon-${c.code}`} className="text-muted hover:text-ink transition-colors">
+                          <Pencil size={16} />
+                        </button>
+                        <button onClick={() => removeCoupon(c)} aria-label="Delete" data-testid={`delete-coupon-${c.code}`} className="text-muted hover:text-red-600 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       <div className="mt-10">
         <Link to="/" className="text-[13px] text-muted hover:text-ink underline underline-offset-4">Back to store</Link>
       </div>
+
+      {couponForm && (
+        <CouponForm
+          initial={couponForm === "new" ? null : couponForm}
+          onCancel={() => setCouponForm(null)}
+          onSaved={onCouponSaved}
+        />
+      )}
 
       {productForm && (
         <ProductForm
