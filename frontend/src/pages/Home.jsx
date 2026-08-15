@@ -9,8 +9,8 @@ const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-be
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 const CATS = [
-  { name: "Skincare", soon: false, img: "/category-skincare.jpg" },
-  { name: "Haircare", soon: false, img: "/category-haircare.jpg" },
+  { name: "Skincare", soon: false, img: "https://images.unsplash.com/photo-1576426863848-c21f53c60b19?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
+  { name: "Haircare", soon: false, img: "https://images.unsplash.com/photo-1608571423539-e951b9b3871e?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Makeup", soon: true, img: "https://images.unsplash.com/photo-1631730486572-226d1f595b68?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
   { name: "Fragrances", soon: true, img: "https://images.unsplash.com/photo-1696894756299-345f1c0feb00?crop=entropy&cs=srgb&fm=jpg&q=85&w=700" },
 ];
@@ -242,20 +242,20 @@ export default function Home() {
               <div key={c.name} data-testid={`category-soon-${c.name.toLowerCase()}`}
                 className="relative aspect-[3/4] overflow-hidden rounded-[3px] group cursor-default select-none">
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover grayscale-[0.3] transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/25 to-transparent" />
-                <span className="absolute top-4 left-5 text-[11px] tracking-[0.25em] uppercase text-cream border border-cream/60 rounded-full px-3.5 py-1.5">Coming Soon</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/50 to-transparent" />
+                <span className="absolute top-4 left-5 text-[11px] tracking-[0.25em] uppercase text-ink border border-ink/40 rounded-full px-3.5 py-1.5">Coming Soon</span>
                 <div className="absolute bottom-5 left-5 right-5">
-                  <div className="font-display text-cream text-2xl">{c.name}</div>
-                  <span className="text-cream/80 text-[12px] mt-1 block">Worth the wait ✦</span>
+                  <div className="font-display text-ink text-2xl">{c.name}</div>
+                  <span className="text-ink-soft text-[12px] mt-1 block">Worth the wait ✦</span>
                 </div>
               </div>
             ) : (
               <button type="button" onClick={() => filterAndScroll("category", c.name)} key={c.name} data-testid={`category-${c.name.toLowerCase()}`}
                 className="group relative aspect-[3/4] overflow-hidden rounded-[3px] text-left">
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/10 to-transparent group-hover:from-ink/90 transition-colors" />
+                <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/45 to-transparent group-hover:from-cream transition-colors" />
                 <div className="absolute bottom-5 left-5">
-                  <div className="font-display text-cream text-2xl">{c.name}</div>
+                  <div className="font-display text-ink text-2xl">{c.name}</div>
                 </div>
               </button>
             )
