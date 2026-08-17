@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Package, IndianRupee, ShoppingCart, CheckCircle2, RefreshCw, Lock, LogOut, Plus, Pencil, Trash2, X, Star } from "lucide-react";
 import {
   getAdminOrders, updateOrderStatus, updateOrderTracking, getAbandonedCarts, getAdminStats, adminLogin, adminMe, setAdminToken,
@@ -17,10 +18,11 @@ const STATUS_STYLE = {
   verification_failed: "bg-red-100 text-red-700",
 };
 
-const ORDER_STATUS_GROUPS = [
-  { key: "paid", label: "Paid", highlight: true },
+const ORDER_STATUS_TABS = [
+  { key: "all", label: "All" },
+  { key: "paid", label: "Paid" },
   { key: "fulfilled", label: "Fulfilled" },
-  { key: "created", label: "Created (awaiting payment)" },
+  { key: "created", label: "Created" },
   { key: "cancelled", label: "Cancelled" },
   { key: "verification_failed", label: "Verification Failed" },
 ];
@@ -307,66 +309,97 @@ function TrackingCell({ order, onSaved }) {
   );
 }
 
-function OrdersTable({ label, orders, highlight, changeStatus, setOrders }) {
-  if (orders.length === 0) return null;
+function OrdersView({ orders, changeStatus, setOrders }) {
+  const [orderTab, setOrderTab] = useState("paid");
+  const counts = ORDER_STATUS_TABS.reduce((acc, t) => {
+    acc[t.key] = t.key === "all" ? orders.length : orders.filter((o) => o.status === t.key).length;
+    return acc;
+  }, {});
+  const visible = orderTab === "all" ? orders : orders.filter((o) => o.status === orderTab);
+
   return (
-    <div className="mb-10">
-      <h3 className="text-[12px] tracking-[0.1em] uppercase text-muted mb-3">{label} <span className="text-muted/70">({orders.length})</span></h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[14px]" data-testid={`orders-table-${label.toLowerCase().split(" ")[0]}`}>
-          <thead>
-            <tr className="text-left text-muted text-[12px] tracking-[0.1em] uppercase border-b border-line">
-              <th className="py-3 pr-4">Order</th>
-              <th className="py-3 pr-4">Customer</th>
-              <th className="py-3 pr-4">Ship To</th>
-              <th className="py-3 pr-4">Items</th>
-              <th className="py-3 pr-4">Total</th>
-              <th className="py-3 pr-4">Date</th>
-              <th className="py-3 pr-4">Status</th>
-              <th className="py-3 pr-4">Tracking</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}
-                className={`border-b align-top ${highlight ? "bg-green-50/70 border-green-100" : "border-line/60"}`}
-                data-testid={`order-row-${o.order_number}`}>
-                <td className="py-4 pr-4 font-medium">#{o.order_number}</td>
-                <td className="py-4 pr-4">
-                  <div>{o.name}</div>
-                  <div className="text-muted text-[12px]">{o.email}</div>
-                  {o.contact && <div className="text-muted text-[12px]">{o.contact}</div>}
-                </td>
-                <td className="py-4 pr-4 max-w-[220px] text-[13px]">
-                  {o.address ? (
-                    <>
-                      <div>{o.address}</div>
-                      <div className="text-muted">{[o.pincode, o.state].filter(Boolean).join(", ")}</div>
-                    </>
-                  ) : <span className="text-muted">-</span>}
-                </td>
-                <td className="py-4 pr-4 max-w-[260px]">
-                  {(o.items || []).map((it, i) => (
-                    <div key={i} className="text-ink-soft text-[13px]">{it.qty}× {it.name} {it.size ? `(${it.size})` : ""}</div>
-                  ))}
-                </td>
-                <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
-                <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
-                <td className="py-4 pr-4">
-                  <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{o.status}</span>
-                  <select value={o.status} onChange={(e) => changeStatus(o.id, e.target.value)} data-testid={`order-status-${o.order_number}`}
-                    className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
-                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </td>
-                <td className="py-4 pr-4">
-                  <TrackingCell order={o} onSaved={(updated) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, ...updated } : x)))} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div>
+      <div className="flex flex-wrap gap-2 mb-6" data-testid="order-status-tabs">
+        {ORDER_STATUS_TABS.map((t) => (
+          <button key={t.key} type="button" onClick={() => setOrderTab(t.key)} data-testid={`order-tab-${t.key}`}
+            className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-[13px] tracking-wide transition-colors ${
+              orderTab === t.key ? "text-cream" : "bg-cream-deep text-ink-soft hover:text-ink"
+            }`}>
+            {orderTab === t.key && (
+              <motion.span layoutId="order-tab-pill" className="absolute inset-0 rounded-full bg-ink -z-10"
+                transition={{ type: "spring", stiffness: 400, damping: 32 }} />
+            )}
+            {t.label}
+            <span className={`text-[11px] ${orderTab === t.key ? "text-cream/70" : "text-muted"}`}>{counts[t.key]}</span>
+          </button>
+        ))}
       </div>
+
+      {visible.length === 0 ? (
+        <p className="text-muted py-16 text-center">No orders here.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[14px]" data-testid="orders-table">
+            <thead>
+              <tr className="text-left text-muted text-[12px] tracking-[0.1em] uppercase border-b border-line">
+                <th className="py-3 pr-4">Order</th>
+                <th className="py-3 pr-4">Customer</th>
+                <th className="py-3 pr-4">Ship To</th>
+                <th className="py-3 pr-4">Items</th>
+                <th className="py-3 pr-4">Total</th>
+                <th className="py-3 pr-4">Date</th>
+                <th className="py-3 pr-4">Status</th>
+                <th className="py-3 pr-4">Tracking</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence initial={false} mode="popLayout">
+                {visible.map((o) => (
+                  <motion.tr key={o.id} layout
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 24 }}
+                    transition={{ duration: 0.25 }}
+                    className={`border-b align-top ${o.status === "paid" ? "bg-green-50/70 border-green-100" : "border-line/60"}`}
+                    data-testid={`order-row-${o.order_number}`}>
+                    <td className="py-4 pr-4 font-medium">#{o.order_number}</td>
+                    <td className="py-4 pr-4">
+                      <div>{o.name}</div>
+                      <div className="text-muted text-[12px]">{o.email}</div>
+                      {o.contact && <div className="text-muted text-[12px]">{o.contact}</div>}
+                    </td>
+                    <td className="py-4 pr-4 max-w-[220px] text-[13px]">
+                      {o.address ? (
+                        <>
+                          <div>{o.address}</div>
+                          <div className="text-muted">{[o.pincode, o.state].filter(Boolean).join(", ")}</div>
+                        </>
+                      ) : <span className="text-muted">-</span>}
+                    </td>
+                    <td className="py-4 pr-4 max-w-[260px]">
+                      {(o.items || []).map((it, i) => (
+                        <div key={i} className="text-ink-soft text-[13px]">{it.qty}× {it.name} {it.size ? `(${it.size})` : ""}</div>
+                      ))}
+                    </td>
+                    <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
+                    <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
+                    <td className="py-4 pr-4">
+                      <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{o.status}</span>
+                      <select value={o.status} onChange={(e) => changeStatus(o.id, e.target.value)} data-testid={`order-status-${o.order_number}`}
+                        className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
+                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <TrackingCell order={o} onSaved={(updated) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, ...updated } : x)))} />
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -528,6 +561,17 @@ export default function Admin() {
     adminMe().then(() => { setAuthed(true); load(); }).catch(() => { setAdminToken(null); setAuthed(false); });
   }, []);
 
+  // Orders can flip status server-side (e.g. the Razorpay webhook marking one paid) without
+  // this page doing anything - poll quietly while the Orders tab is open so that shows up
+  // without needing a manual Refresh click.
+  useEffect(() => {
+    if (!authed || tab !== "orders") return;
+    const interval = setInterval(() => {
+      getAdminOrders().then(setOrders).catch(() => {});
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [authed, tab]);
+
   const doLogin = async (e) => {
     e.preventDefault();
     setAuthError(""); setAuthLoading(true);
@@ -630,18 +674,7 @@ export default function Admin() {
         <p className="text-muted py-16 text-center">Loading…</p>
       ) : tab === "orders" ? (
         orders.length === 0 ? <p className="text-muted py-16 text-center">No orders yet.</p> : (
-          <div>
-            {ORDER_STATUS_GROUPS.map((g) => (
-              <OrdersTable
-                key={g.key}
-                label={g.label}
-                highlight={g.highlight}
-                orders={orders.filter((o) => o.status === g.key)}
-                changeStatus={changeStatus}
-                setOrders={setOrders}
-              />
-            ))}
-          </div>
+          <OrdersView orders={orders} changeStatus={changeStatus} setOrders={setOrders} />
         )
       ) : tab === "abandoned" ? (
         carts.length === 0 ? <p className="text-muted py-16 text-center">No abandoned carts.</p> : (
