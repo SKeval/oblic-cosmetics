@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
@@ -12,6 +12,9 @@ from typing import List, Optional
 import uuid
 import re
 import secrets
+import hmac
+import hashlib
+import json
 from datetime import datetime, timezone, timedelta
 import razorpay
 import bcrypt
@@ -29,6 +32,7 @@ db = client[os.environ['DB_NAME']]
 
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
 razorpay_client = (
     razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
     if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET else None
@@ -635,6 +639,30 @@ async def create_razorpay_order(payload: RazorpayOrderCreate, customer: Optional
     }
 
 
+async def mark_order_paid(razorpay_order_id: str, razorpay_payment_id: str) -> Optional[dict]:
+    """Idempotently flips an order to paid and fires the confirmation email. Safe to call
+    from both the client-side verify flow and the Razorpay webhook - whichever gets there
+    first wins, the other is a no-op, so a payment is never confirmed twice."""
+    existing = await db.orders.find_one({"razorpay_order_id": razorpay_order_id})
+    if not existing:
+        return None
+    if existing.get("status") == "paid":
+        return existing
+    await db.orders.update_one(
+        {"razorpay_order_id": razorpay_order_id},
+        {"$set": {
+            "status": "paid",
+            "razorpay_payment_id": razorpay_payment_id,
+            "paid_at": now_iso(),
+        }},
+    )
+    order = await db.orders.find_one({"razorpay_order_id": razorpay_order_id}, {"_id": 0})
+    if order and order.get("email"):
+        await db.abandoned_carts.delete_many({"email": order["email"]})
+        asyncio.create_task(send_order_confirmation_email(order))
+    return order
+
+
 @api_router.post("/payments/razorpay/verify")
 async def verify_razorpay(payload: RazorpayVerify):
     if razorpay_client is None:
@@ -652,19 +680,30 @@ async def verify_razorpay(payload: RazorpayVerify):
         )
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
-    await db.orders.update_one(
-        {"razorpay_order_id": payload.razorpay_order_id},
-        {"$set": {
-            "status": "paid",
-            "razorpay_payment_id": payload.razorpay_payment_id,
-            "paid_at": now_iso(),
-        }},
-    )
-    order = await db.orders.find_one({"razorpay_order_id": payload.razorpay_order_id}, {"_id": 0})
-    if order and order.get("email"):
-        await db.abandoned_carts.delete_many({"email": order["email"]})
-        asyncio.create_task(send_order_confirmation_email(order))
+    order = await mark_order_paid(payload.razorpay_order_id, payload.razorpay_payment_id)
     return {"status": "paid", "order": order}
+
+
+@api_router.post("/webhooks/razorpay")
+async def razorpay_webhook(request: Request):
+    """Server-to-server payment confirmation. Exists because the client-side /verify call
+    above depends on the customer's browser completing a round trip after paying - if they
+    close the tab or lose signal right after paying (common on mobile/UPI), that never
+    happens and the order is stuck on "created" despite Razorpay having captured the money.
+    Razorpay calls this directly regardless of what the customer's browser does."""
+    if not RAZORPAY_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+    body = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    expected = hmac.new(RAZORPAY_WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    payload = json.loads(body)
+    if payload.get("event") == "payment.captured":
+        payment = payload["payload"]["payment"]["entity"]
+        await mark_order_paid(payment["order_id"], payment["id"])
+    return {"ok": True}
 
 
 async def send_order_confirmation_email(order: dict):

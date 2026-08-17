@@ -559,41 +559,60 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id} className="border-b border-line/60 align-top" data-testid={`order-row-${o.order_number}`}>
-                    <td className="py-4 pr-4 font-medium">#{o.order_number}</td>
-                    <td className="py-4 pr-4">
-                      <div>{o.name}</div>
-                      <div className="text-muted text-[12px]">{o.email}</div>
-                      {o.contact && <div className="text-muted text-[12px]">{o.contact}</div>}
-                    </td>
-                    <td className="py-4 pr-4 max-w-[220px] text-[13px]">
-                      {o.address ? (
-                        <>
-                          <div>{o.address}</div>
-                          <div className="text-muted">{[o.pincode, o.state].filter(Boolean).join(", ")}</div>
-                        </>
-                      ) : <span className="text-muted">-</span>}
-                    </td>
-                    <td className="py-4 pr-4 max-w-[260px]">
-                      {(o.items || []).map((it, i) => (
-                        <div key={i} className="text-ink-soft text-[13px]">{it.qty}× {it.name} {it.size ? `(${it.size})` : ""}</div>
-                      ))}
-                    </td>
-                    <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
-                    <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
-                    <td className="py-4 pr-4">
-                      <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{o.status}</span>
-                      <select value={o.status} onChange={(e) => changeStatus(o.id, e.target.value)} data-testid={`order-status-${o.order_number}`}
-                        className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
-                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </td>
-                    <td className="py-4 pr-4">
-                      <TrackingCell order={o} onSaved={(updated) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, ...updated } : x)))} />
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const paid = orders.filter((o) => o.status === "paid");
+                  const rest = orders.filter((o) => o.status !== "paid");
+                  const row = (o) => (
+                    <tr key={o.id}
+                      className={`border-b align-top ${o.status === "paid" ? "bg-green-50/70 border-green-100" : "border-line/60"}`}
+                      data-testid={`order-row-${o.order_number}`}>
+                      <td className="py-4 pr-4 font-medium">#{o.order_number}</td>
+                      <td className="py-4 pr-4">
+                        <div>{o.name}</div>
+                        <div className="text-muted text-[12px]">{o.email}</div>
+                        {o.contact && <div className="text-muted text-[12px]">{o.contact}</div>}
+                      </td>
+                      <td className="py-4 pr-4 max-w-[220px] text-[13px]">
+                        {o.address ? (
+                          <>
+                            <div>{o.address}</div>
+                            <div className="text-muted">{[o.pincode, o.state].filter(Boolean).join(", ")}</div>
+                          </>
+                        ) : <span className="text-muted">-</span>}
+                      </td>
+                      <td className="py-4 pr-4 max-w-[260px]">
+                        {(o.items || []).map((it, i) => (
+                          <div key={i} className="text-ink-soft text-[13px]">{it.qty}× {it.name} {it.size ? `(${it.size})` : ""}</div>
+                        ))}
+                      </td>
+                      <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
+                      <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
+                      <td className="py-4 pr-4">
+                        <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{o.status}</span>
+                        <select value={o.status} onChange={(e) => changeStatus(o.id, e.target.value)} data-testid={`order-status-${o.order_number}`}
+                          className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
+                          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <TrackingCell order={o} onSaved={(updated) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, ...updated } : x)))} />
+                      </td>
+                    </tr>
+                  );
+                  return (
+                    <>
+                      {paid.map(row)}
+                      {paid.length > 0 && rest.length > 0 && (
+                        <tr>
+                          <td colSpan={8} className="py-2 px-4 text-[11px] tracking-[0.1em] uppercase text-muted bg-cream-deep">
+                            Other orders
+                          </td>
+                        </tr>
+                      )}
+                      {rest.map(row)}
+                    </>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
