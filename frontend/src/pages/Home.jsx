@@ -1,12 +1,23 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { ArrowRight, Check, CheckCircle2, SlidersHorizontal, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Check, CheckCircle2, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { getCategories, getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
 import StarRating from "../components/StarRating";
 
 const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
+
+// Each slide keeps its own CTA hit-region since the "Shop Now" button is baked into the
+// image itself at a different position/size per banner - percentages are relative to
+// that slide's own natural image dimensions, not a shared crop.
+const HERO_SLIDES = [
+  { img: "/hero-rakhi.jpg", alt: "Happy Raksha Bandhan — 20% off with code OBLIC20, free Rakhi on orders ₹599 and above.",
+    cta: { left: "21.9%", top: "88.0%", width: "9.6%", height: "5.7%" } },
+  { img: HERO, alt: "Oblic - Luxury in Every Touch. Premium skincare and haircare.",
+    cta: { left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" } },
+];
 
 const CATS = [
   { name: "Skincare", soon: false, img: "/category-skincare.jpg" },
@@ -64,6 +75,14 @@ export default function Home() {
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide((i) => (i + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const category = searchParams.get("category") || "All";
   const onSale = searchParams.get("on_sale") === "true";
@@ -104,12 +123,38 @@ export default function Home() {
       {/* Hero */}
       <section className="container pt-6">
         <div className="relative rounded-[4px] overflow-hidden">
-          <img src={HERO} alt="Oblic - Luxury in Every Touch. Premium skincare and haircare."
-            className="w-full h-auto block" />
-          {/* Overlays the "Shop Now" pill baked into the hero image, so only that button navigates */}
-          <button type="button" onClick={scrollToShop} aria-label="Shop now" data-testid="hero-cta"
-            className="absolute"
-            style={{ left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" }} />
+          <AnimatePresence mode="wait">
+            <motion.div key={heroSlide}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}
+              className="relative">
+              <img src={HERO_SLIDES[heroSlide].img} alt={HERO_SLIDES[heroSlide].alt} className="w-full h-auto block" />
+              {/* Overlays the "Shop Now" pill baked into this slide's image, so only that button navigates */}
+              <button type="button" onClick={scrollToShop} aria-label="Shop now" data-testid="hero-cta"
+                className="absolute" style={HERO_SLIDES[heroSlide].cta} />
+            </motion.div>
+          </AnimatePresence>
+
+          {HERO_SLIDES.length > 1 && (
+            <>
+              <button type="button" aria-label="Previous slide" data-testid="hero-prev"
+                onClick={() => setHeroSlide((i) => (i - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-cream/80 hover:bg-cream flex items-center justify-center transition-colors">
+                <ChevronLeft size={18} />
+              </button>
+              <button type="button" aria-label="Next slide" data-testid="hero-next"
+                onClick={() => setHeroSlide((i) => (i + 1) % HERO_SLIDES.length)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-cream/80 hover:bg-cream flex items-center justify-center transition-colors">
+                <ChevronRight size={18} />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                {HERO_SLIDES.map((_, i) => (
+                  <button key={i} type="button" onClick={() => setHeroSlide(i)} aria-label={`Show slide ${i + 1}`}
+                    data-testid={`hero-dot-${i}`}
+                    className={`h-2 rounded-full transition-all ${i === heroSlide ? "bg-cream w-6" : "bg-cream/50 hover:bg-cream/80 w-2"}`} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
