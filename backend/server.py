@@ -860,11 +860,35 @@ async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=De
     updates = payload.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
-    result = await db.orders.update_one({"id": order_id}, {"$set": updates})
-    if result.matched_count == 0:
+    existing = await db.orders.find_one({"id": order_id})
+    if not existing:
         raise HTTPException(status_code=404, detail="Order not found")
+    await db.orders.update_one({"id": order_id}, {"$set": updates})
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+
+    # Only fire the "shipped" email the first time tracking info is actually added,
+    # not on every subsequent edit (e.g. fixing a typo in the tracking number).
+    newly_tracked = updates.get("tracking_number") and not existing.get("tracking_number")
+    if newly_tracked and order.get("email"):
+        asyncio.create_task(send_shipping_email(order))
     return order
+
+
+async def send_shipping_email(order: dict):
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
+      <h2 style="margin-bottom:4px">Your order is on its way, {order.get('name', '')}!</h2>
+      <p style="color:#666;margin-top:0">Order #{order.get('order_number')}</p>
+      <p style="color:#444">Here's your tracking information:</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0">
+        <tr><td style="padding:6px 0;color:#666">Carrier</td><td style="padding:6px 0;text-align:right;font-weight:bold">{order.get('carrier') or '-'}</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Tracking Number</td><td style="padding:6px 0;text-align:right;font-weight:bold">{order.get('tracking_number') or '-'}</td></tr>
+      </table>
+      <p style="color:#666;font-size:13px;margin-top:32px">Track your package directly on your carrier's website using the tracking number above. Questions? Just reply to this email or reach us on WhatsApp.</p>
+      <p style="color:#999;font-size:12px">Oblic Cosmetics</p>
+    </div>
+    """
+    await send_email(order["email"], f"Your order has shipped — #{order.get('order_number')}", html)
 
 
 @api_router.get("/admin/abandoned-carts")

@@ -268,27 +268,41 @@ function TrackingCell({ order, onSaved }) {
   const [carrier, setCarrier] = useState(order.carrier || "");
   const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || "");
   const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Keep in sync if this order's tracking gets updated elsewhere (e.g. a fresh admin_orders load).
+  useEffect(() => {
+    setCarrier(order.carrier || "");
+    setTrackingNumber(order.tracking_number || "");
+  }, [order.carrier, order.tracking_number]);
+
+  const dirty = carrier !== (order.carrier || "") || trackingNumber !== (order.tracking_number || "");
 
   const save = async () => {
-    if (carrier === (order.carrier || "") && trackingNumber === (order.tracking_number || "")) return;
+    if (!dirty) return;
     setSaving(true);
     try {
       const updated = await updateOrderTracking(order.id, trackingNumber.trim(), carrier.trim());
       onSaved(updated);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1500);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-1.5 min-w-[140px]">
-      <input value={carrier} onChange={(e) => setCarrier(e.target.value)} onBlur={save} placeholder="Carrier"
+    <div className="flex flex-col gap-1.5 min-w-[150px]">
+      <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="Carrier"
         data-testid={`order-carrier-${order.order_number}`}
         className="bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none focus:border-ink" />
-      <input value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} onBlur={save} placeholder="Tracking number"
+      <input value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="Tracking number"
         data-testid={`order-tracking-${order.order_number}`}
         className="bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none focus:border-ink" />
-      {saving && <span className="text-[11px] text-muted">Saving…</span>}
+      <button type="button" onClick={save} disabled={!dirty || saving} data-testid={`order-tracking-save-${order.order_number}`}
+        className="text-[11px] tracking-[0.08em] uppercase border border-ink rounded-full px-3 py-1.5 transition-colors hover:bg-ink hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink">
+        {saving ? "Saving…" : savedFlash ? "Saved ✓" : "Save"}
+      </button>
     </div>
   );
 }
