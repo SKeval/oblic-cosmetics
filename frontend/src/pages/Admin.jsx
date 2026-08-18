@@ -8,7 +8,17 @@ import {
   getCoupons, createCoupon, updateCoupon, deleteCoupon,
 } from "../api";
 
+// "fulfilled" is kept as the stored status value (existing orders already use it) - only
+// the label shown to the founder changed to "Delivered", which is the term she actually uses.
 const STATUS_OPTIONS = ["created", "paid", "fulfilled", "cancelled", "verification_failed"];
+
+const STATUS_LABELS = {
+  created: "Created",
+  paid: "Paid",
+  fulfilled: "Delivered",
+  cancelled: "Cancelled",
+  verification_failed: "Verification Failed",
+};
 
 const STATUS_STYLE = {
   paid: "bg-green-100 text-green-800",
@@ -21,7 +31,7 @@ const STATUS_STYLE = {
 const ORDER_STATUS_TABS = [
   { key: "all", label: "All" },
   { key: "paid", label: "Paid" },
-  { key: "fulfilled", label: "Fulfilled" },
+  { key: "fulfilled", label: "Delivered" },
   { key: "created", label: "Created" },
   { key: "cancelled", label: "Cancelled" },
   { key: "verification_failed", label: "Verification Failed" },
@@ -384,10 +394,10 @@ function OrdersView({ orders, changeStatus, setOrders }) {
                     <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
                     <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
                     <td className="py-4 pr-4">
-                      <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{o.status}</span>
+                      <span className={`inline-block text-[11px] px-2.5 py-1 rounded-full mb-2 ${STATUS_STYLE[o.status] || "bg-cream-deep text-ink"}`}>{STATUS_LABELS[o.status] || o.status}</span>
                       <select value={o.status} onChange={(e) => changeStatus(o.id, e.target.value)} data-testid={`order-status-${o.order_number}`}
                         className="block bg-paper border border-line rounded-full px-3 py-1.5 text-[12px] outline-none cursor-pointer">
-                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                       </select>
                     </td>
                     <td className="py-4 pr-4">

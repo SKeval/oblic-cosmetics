@@ -6,6 +6,14 @@ import { useWishlist } from "../context/WishlistContext";
 import { getCustomerOrders, forgotPassword } from "../api";
 import ProductCard from "../components/ProductCard";
 
+const STATUS_LABELS = {
+  created: "Created",
+  paid: "Paid",
+  fulfilled: "Delivered",
+  cancelled: "Cancelled",
+  verification_failed: "Verification Failed",
+};
+
 export default function Account() {
   const { customer, loading, login, register, logout } = useCustomer();
   const { items: wishlistItems } = useWishlist();
@@ -171,7 +179,7 @@ export default function Account() {
                   <td className="py-4 pr-4 whitespace-nowrap">₹{Number(o.total).toFixed(0)}</td>
                   <td className="py-4 pr-4 text-muted text-[13px] whitespace-nowrap">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "-"}</td>
                   <td className="py-4 pr-4">
-                    <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink mb-1">{o.status}</span>
+                    <span className="inline-block text-[11px] px-2.5 py-1 rounded-full bg-cream-deep text-ink mb-1">{STATUS_LABELS[o.status] || o.status}</span>
                     {o.tracking_number && (
                       <div className="text-muted text-[12px]">{o.carrier ? `${o.carrier} — ` : ""}{o.tracking_number}</div>
                     )}

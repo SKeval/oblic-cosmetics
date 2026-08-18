@@ -901,7 +901,9 @@ async def admin_abandoned_carts(admin=Depends(require_admin)):
 @api_router.get("/admin/stats")
 async def admin_stats(admin=Depends(require_admin)):
     orders = await db.orders.find({}, {"_id": 0}).to_list(2000)
-    paid = [o for o in orders if o.get("status") == "paid"]
+    # "fulfilled" (delivered) orders were paid too - they just moved past the "paid" status,
+    # so excluding them would make revenue drop every time an order gets marked delivered.
+    paid = [o for o in orders if o.get("status") in ("paid", "fulfilled")]
     revenue = round(sum(o.get("total", 0) for o in paid), 2)
     abandoned = await db.abandoned_carts.count_documents({})
     return {
