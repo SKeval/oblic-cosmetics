@@ -16,8 +16,8 @@ const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?cro
 // The evergreen banner is commented out (not deleted) while the Raksha Bandhan banner
 // runs alone for the festival - restore it by uncommenting once the promotion ends.
 const HERO_SLIDES = [
-  { img: "/hero-rakhi.jpg", alt: "Happy Raksha Bandhan — 20% off with code OBLIC20, free Rakhi on orders ₹599 and above.",
-    cta: { left: "21.9%", top: "91.0%", width: "9.6%", height: "4.3%" } },
+  { img: "/hero-rakhi.jpg", alt: "Happy Raksha Bandhan — 20% off with code OBLIC20, free Silver Rakhi on orders ₹599 and above.",
+    cta: { left: "14.1%", top: "87.0%", width: "14.7%", height: "5.3%" } },
   // { img: HERO, alt: "Oblic - Luxury in Every Touch. Premium skincare and haircare.",
   //   cta: { left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" } },
 ];
