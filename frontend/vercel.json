@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "rewrites": [
+    { "source": "/product/:id", "destination": "/api/product-meta?id=:id" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
