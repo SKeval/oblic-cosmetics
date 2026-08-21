@@ -740,6 +740,18 @@ async def cancel_razorpay_order(payload: RazorpayCancel):
     return {"ok": True, "cancelled": result.modified_count > 0}
 
 
+@api_router.get("/payments/razorpay/status/{razorpay_order_id}")
+async def razorpay_order_status(razorpay_order_id: str):
+    # Lets the checkout page poll for the webhook having confirmed a payment that the
+    # customer's own browser failed to verify (common in flaky in-app browsers like
+    # Instagram/WhatsApp) before showing them anything alarming. Only exposes status/order
+    # number/total, not address/contact - same "unguessable ID as the auth" pattern as cancel above.
+    order = await db.orders.find_one({"razorpay_order_id": razorpay_order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"status": order["status"], "order_number": order["order_number"], "total": order["total"]}
+
+
 # ---------- Abandoned Cart ----------
 @api_router.post("/abandoned-cart")
 async def save_abandoned_cart(payload: AbandonedCart):

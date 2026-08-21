@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useCustomer } from "../context/CustomerContext";
-import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, cancelRazorpayOrder, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState, applyCoupon } from "../api";
+import { getPaymentConfig, createRazorpayOrder, verifyRazorpayPayment, cancelRazorpayOrder, getRazorpayOrderStatus, loadRazorpayScript, saveAbandonedCart, customerAuthHeaders, getPincodeState, applyCoupon } from "../api";
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
@@ -177,7 +177,30 @@ export default function Checkout() {
             setPaidOrder(res.order || { order_number: data.order_number, name: form.name, email: form.email, total: data.total });
             clear();
           } catch {
-            setError("Payment was received but could not be verified. Please contact support with your payment reference.");
+            // The verify call itself can fail even though Razorpay genuinely captured the
+            // payment - flaky in-app browsers (Instagram/WhatsApp) are especially prone to
+            // dropping the response after the request already succeeded server-side. The
+            // webhook confirms payments independently of the browser, so give it a chance
+            // to catch up before showing the customer anything that sounds like their
+            // payment failed - nothing is scarier to a customer than that right after paying.
+            let confirmed = null;
+            for (let i = 0; i < 5 && !confirmed; i++) {
+              await new Promise((r) => setTimeout(r, 3000));
+              try {
+                const status = await getRazorpayOrderStatus(response.razorpay_order_id);
+                if (status.status === "paid") confirmed = status;
+              } catch { /* keep trying */ }
+            }
+            if (confirmed) {
+              setPaidOrder({ order_number: confirmed.order_number, name: form.name, email: form.email, total: confirmed.total });
+              clear();
+            } else {
+              setError(
+                `We've received your payment and are still confirming it — this can take a few minutes. ` +
+                `You'll get an email confirmation shortly, and there's no need to pay again. If you don't hear ` +
+                `from us within 30 minutes, please contact support and mention order ${data.order_number}.`
+              );
+            }
           }
         },
         modal: {

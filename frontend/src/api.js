@@ -66,6 +66,7 @@ export const applyCoupon = (code, email, subtotal) => api.post("/coupons/apply",
 export const createRazorpayOrder = (data, headers) => api.post("/payments/razorpay/order", data, { headers }).then((r) => r.data);
 export const verifyRazorpayPayment = (data) => api.post("/payments/razorpay/verify", data).then((r) => r.data);
 export const cancelRazorpayOrder = (razorpay_order_id) => api.post("/payments/razorpay/cancel", { razorpay_order_id }).then((r) => r.data);
+export const getRazorpayOrderStatus = (razorpay_order_id) => api.get(`/payments/razorpay/status/${razorpay_order_id}`).then((r) => r.data);
 export const saveAbandonedCart = (data) => api.post("/abandoned-cart", data).then((r) => r.data);
 export const getAdminOrders = () => api.get("/admin/orders").then((r) => r.data);
 export const updateOrderStatus = (id, status) => api.patch(`/admin/orders/${id}`, { status }).then((r) => r.data);
