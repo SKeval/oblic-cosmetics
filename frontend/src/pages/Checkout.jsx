@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { CheckCircle2, ArrowLeft, ShieldCheck, AlertCircle, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useCustomer } from "../context/CustomerContext";
@@ -229,12 +230,53 @@ export default function Checkout() {
 
   if (paidOrder) {
     return (
-      <div className="container py-28 text-center max-w-lg" data-testid="order-confirmation">
-        <CheckCircle2 size={52} className="mx-auto text-sage-deep" strokeWidth={1.3} />
-        <h1 className="font-display text-4xl mt-6">Thank you, {paidOrder.name?.split(" ")[0] || "friend"}!</h1>
-        <p className="text-ink-soft mt-3">Your payment was successful and order <span className="font-medium">#{paidOrder.order_number}</span> is confirmed. A confirmation has been sent to {paidOrder.email}.</p>
-        <p className="font-display text-2xl mt-6">Paid: ₹{Number(paidOrder.total).toFixed(0)}</p>
-        <Link to="/#shop" className="inline-block mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
+      <div className="container py-20 md:py-28 max-w-xl mx-auto text-center" data-testid="order-confirmation">
+        <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-16 h-16 rounded-full bg-sage/30 flex items-center justify-center mx-auto">
+          <CheckCircle2 size={30} className="text-sage-deep" strokeWidth={1.5} />
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
+          <p className="text-[12px] tracking-[0.25em] uppercase text-muted mt-8">Order Confirmed</p>
+          <h1 className="font-display text-4xl md:text-5xl mt-3">Thank you, {paidOrder.name?.split(" ")[0] || "friend"}</h1>
+          <p className="text-ink-soft mt-4 max-w-md mx-auto">
+            Order <span className="font-medium text-ink">#{paidOrder.order_number}</span> is confirmed — we're already getting it ready for you.
+            A confirmation has been sent to <span className="font-medium text-ink">{paidOrder.email}</span>.
+          </p>
+        </motion.div>
+
+        {paidOrder.items?.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-10 text-left bg-paper border border-line rounded-[4px] p-6">
+            {paidOrder.items.map((it, i) => (
+              <div key={i} className={`flex items-center justify-between py-2.5 text-[14px] ${i !== 0 ? "border-t border-line/60" : ""}`}>
+                <span className="text-ink-soft">{it.qty}× {it.name}{it.size ? ` (${it.size})` : ""}</span>
+                <span>₹{(it.price * it.qty).toFixed(0)}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-3 mt-1 border-t border-line">
+              <span className="font-display text-lg">Total Paid</span>
+              <span className="font-display text-lg">₹{Number(paidOrder.total).toFixed(0)}</span>
+            </div>
+          </motion.div>
+        )}
+        {!paidOrder.items?.length && (
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.5 }}
+            className="font-display text-2xl mt-6">Paid: ₹{Number(paidOrder.total).toFixed(0)}</motion.p>
+        )}
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 mt-10 text-[12px] text-muted">
+          <span>✦ Packed with care</span>
+          <span>✦ Shipped across India</span>
+          <span>✦ Cruelty-free always</span>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55, duration: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-10">
+          <Link to="/#shop" className="inline-block bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
+          <Link to="/account" className="text-[13px] text-muted hover:text-ink underline underline-offset-4">View Your Orders</Link>
+        </motion.div>
       </div>
     );
   }
