@@ -30,6 +30,8 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [pincodeState, setPincodeState] = useState({ pincode: "", state: null, checking: false });
   const [paidOrder, setPaidOrder] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmTimedOut, setConfirmTimedOut] = useState(null); // null | order_number
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [gatewayEnabled, setGatewayEnabled] = useState(true);
@@ -182,8 +184,11 @@ export default function Checkout() {
             // payment - flaky in-app browsers (Instagram/WhatsApp) are especially prone to
             // dropping the response after the request already succeeded server-side. The
             // webhook confirms payments independently of the browser, so give it a chance
-            // to catch up before showing the customer anything that sounds like their
-            // payment failed - nothing is scarier to a customer than that right after paying.
+            // to catch up. Show a dedicated "confirming" screen for this instead of leaving
+            // the customer on the checkout form with the Pay button still sitting right
+            // there - the fewer chances for a confused double-payment, the better.
+            setLoading(false);
+            setConfirming(true);
             let confirmed = null;
             for (let i = 0; i < 5 && !confirmed; i++) {
               await new Promise((r) => setTimeout(r, 3000));
@@ -192,15 +197,12 @@ export default function Checkout() {
                 if (status.status === "paid") confirmed = status;
               } catch { /* keep trying */ }
             }
+            setConfirming(false);
             if (confirmed) {
               setPaidOrder({ order_number: confirmed.order_number, name: form.name, email: form.email, total: confirmed.total });
               clear();
             } else {
-              setError(
-                `We've received your payment and are still confirming it — this can take a few minutes. ` +
-                `You'll get an email confirmation shortly, and there's no need to pay again. If you don't hear ` +
-                `from us within 30 minutes, please contact support and mention order ${data.order_number}.`
-              );
+              setConfirmTimedOut(data.order_number);
             }
           }
         },
@@ -227,6 +229,33 @@ export default function Checkout() {
       setLoading(false);
     }
   };
+
+  if (confirming) {
+    return (
+      <div className="container py-28 text-center max-w-lg mx-auto" data-testid="order-confirming">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+          className="w-12 h-12 rounded-full border-2 border-line border-t-plum mx-auto" />
+        <h1 className="font-display text-3xl mt-8">Confirming your payment…</h1>
+        <p className="text-ink-soft mt-3">This usually only takes a few seconds. Please don't close this page or pay again.</p>
+      </div>
+    );
+  }
+
+  if (confirmTimedOut) {
+    return (
+      <div className="container py-28 text-center max-w-lg mx-auto" data-testid="order-confirm-timeout">
+        <CheckCircle2 size={44} className="mx-auto text-sage-deep" strokeWidth={1.3} />
+        <h1 className="font-display text-3xl mt-6">We've got your payment</h1>
+        <p className="text-ink-soft mt-3">
+          We're still confirming it on our end — this can take a few minutes. You'll get an email
+          confirmation shortly, and there's <span className="font-medium text-ink">no need to pay again</span>.
+          If you don't hear from us within 30 minutes, please contact support and mention order{" "}
+          <span className="font-medium text-ink">#{confirmTimedOut}</span>.
+        </p>
+        <Link to="/#shop" className="inline-block mt-8 bg-plum text-cream px-8 py-4 rounded-full text-[13px] tracking-[0.12em] uppercase hover:bg-ink transition-colors">Continue Shopping</Link>
+      </div>
+    );
+  }
 
   if (paidOrder) {
     return (
