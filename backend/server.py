@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
@@ -15,6 +15,8 @@ import secrets
 import hmac
 import hashlib
 import json
+import csv
+import io
 from datetime import datetime, timezone, timedelta
 import razorpay
 import bcrypt
@@ -442,6 +444,35 @@ class ResetPassword(BaseModel):
 @api_router.get("/")
 async def root():
     return {"message": "Oblic API"}
+
+
+@api_router.get("/meta-feed.csv")
+async def meta_product_feed():
+    """Public, unauthenticated product feed for Meta Commerce Manager's "Data file" catalog
+    source. Generated live from the real product database on every fetch, so every current
+    and future product (added via the admin panel, no separate step) stays in sync
+    automatically - Meta's own scheduled fetch (daily) picks up any changes on its own."""
+    products = await db.products.find({}, {"_id": 0}).to_list(1000)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand"])
+    for p in products:
+        image = (p.get("images") or [""])[0]
+        if image and not image.startswith("http"):
+            image = f"{SITE_URL}{image}"
+        availability = "in stock" if p.get("in_stock", True) is not False else "out of stock"
+        writer.writerow([
+            p.get("id", ""),
+            p.get("name", ""),
+            (p.get("description") or "").replace("\n", " ")[:5000],
+            availability,
+            "new",
+            f"{p.get('price', 0):.2f} INR",
+            f"{SITE_URL}/product/{p.get('id', '')}",
+            image,
+            p.get("brand", "Oblic"),
+        ])
+    return Response(content=output.getvalue(), media_type="text/csv; charset=utf-8")
 
 
 @api_router.get("/products")
