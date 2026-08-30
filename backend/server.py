@@ -446,7 +446,7 @@ async def root():
     return {"message": "Oblic API"}
 
 
-@api_router.get("/meta-feed.csv")
+@api_router.api_route("/meta-feed.csv", methods=["GET", "HEAD"])
 async def meta_product_feed():
     """Public, unauthenticated product feed for Meta Commerce Manager's "Data file" catalog
     source. Generated live from the real product database on every fetch, so every current

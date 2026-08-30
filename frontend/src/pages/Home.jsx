@@ -6,20 +6,19 @@ import { getCategories, getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
 import StarRating from "../components/StarRating";
 
-// eslint-disable-next-line no-unused-vars -- kept for when the evergreen slide below is restored
 const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 // Each slide keeps its own CTA hit-region since the "Shop Now" button is baked into the
 // image itself at a different position/size per banner - percentages are relative to
 // that slide's own natural image dimensions, not a shared crop.
-// The evergreen banner is commented out (not deleted) while the Raksha Bandhan banner
-// runs alone for the festival - restore it by uncommenting once the promotion ends.
+// The Raksha Bandhan banner is commented out (not deleted) now that the promotion has
+// ended - restore it by uncommenting if it's reused for a future festival.
 const HERO_SLIDES = [
-  { img: "/hero-rakhi.jpg", alt: "Happy Raksha Bandhan — 20% off with code OBLIC20, free Silver Rakhi on orders ₹599 and above.",
-    cta: { left: "14.1%", top: "87.0%", width: "14.7%", height: "5.3%" } },
-  // { img: HERO, alt: "Oblic - Luxury in Every Touch. Premium skincare and haircare.",
-  //   cta: { left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" } },
+  { img: HERO, alt: "Oblic - Luxury in Every Touch. Premium skincare and haircare.",
+    cta: { left: "4.4%", top: "65.2%", width: "11.6%", height: "5.4%" } },
+  // { img: "/hero-rakhi.jpg", alt: "Happy Raksha Bandhan — 20% off with code OBLIC20, free Silver Rakhi on orders ₹599 and above.",
+  //   cta: { left: "14.1%", top: "87.0%", width: "14.7%", height: "5.3%" } },
 ];
 
 const CATS = [
