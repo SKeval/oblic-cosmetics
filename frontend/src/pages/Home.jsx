@@ -6,18 +6,21 @@ import { getCategories, getProducts } from "../api";
 import ProductCard from "../components/ProductCard";
 import StarRating from "../components/StarRating";
 
-// eslint-disable-next-line no-unused-vars -- kept for when the evergreen slide below is restored
+// eslint-disable-next-line no-unused-vars -- kept for when the original evergreen slide is restored
 const HERO = "https://customer-assets-39nsmqrw.emergentagent.net/job_admiring-beaver-9/artifacts/i7rowu0f_1234.png";
 const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 // Each slide keeps its own CTA hit-region since the "Shop Now" button is baked into the
 // image itself at a different position/size per banner - percentages are relative to
 // that slide's own natural image dimensions, not a shared crop.
-// Evergreen and past-festival banners are commented out (not deleted) while the current
-// one runs alone - restore any of them by uncommenting when needed again.
+// Only the current banner is active; earlier ones are commented out for reference. Festival
+// banners' image files are removed from /public once their festival ends, so restoring one
+// means re-adding its image first, then uncommenting its entry.
 const HERO_SLIDES = [
-  { img: "/hero-ganesh-chaturthi.jpg", alt: "Happy Ganesh Chaturthi — May Bappa bring happiness, good health and endless glow. Glow with purity, shine with Oblic.",
-    cta: { left: "87.8%", top: "49.1%", width: "10.2%", height: "3.9%" } },
+  { img: "/hero-luxury.jpg", alt: "Oblic - Luxury in Every Touch. Pure care for skin and hair.",
+    cta: { left: "11.4%", top: "70.3%", width: "18.4%", height: "7.7%" } },
+  // { img: "/hero-ganesh-chaturthi.jpg", alt: "Happy Ganesh Chaturthi — May Bappa bring happiness, good health and endless glow. Glow with purity, shine with Oblic.",
+  //   cta: { left: "87.8%", top: "49.1%", width: "10.2%", height: "3.9%" } },
   // { img: "/hero-janmashtami.jpg", alt: "Happy Janmashtami — Glow with purity, shine with Oblic. Festive Glow starts with Oblic.",
   //   cta: { left: "86.1%", top: "30.5%", width: "8.5%", height: "4.3%" } },
   // { img: HERO, alt: "Oblic - Luxury in Every Touch. Premium skincare and haircare.",
