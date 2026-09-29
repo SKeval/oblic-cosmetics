@@ -17,8 +17,12 @@ const LIFESTYLE = "https://images.unsplash.com/photo-1555820585-c5ae44394b79?cro
 // banners' image files are removed from /public once their festival ends, so restoring one
 // means re-adding its image first, then uncommenting its entry.
 const HERO_SLIDES = [
-  { img: "/hero-luxury.jpg", alt: "Oblic - Luxury in Every Touch. Pure care for skin and hair.",
-    cta: { left: "11.4%", top: "70.3%", width: "18.4%", height: "7.7%" } },
+  // This banner has no "Shop Now" button baked in (just a 30% off badge), so the CTA
+  // hit-region covers the full image instead of a small button-sized area.
+  { img: "/hero-navratri.jpg", alt: "Navratri Special Offer — All products 30% off. Celebrate tradition with pure care for your skin and hair.",
+    cta: { left: "0%", top: "0%", width: "100%", height: "100%" } },
+  // { img: "/hero-luxury.jpg", alt: "Oblic - Luxury in Every Touch. Pure care for skin and hair.",
+  //   cta: { left: "11.4%", top: "70.3%", width: "18.4%", height: "7.7%" } },
   // { img: "/hero-ganesh-chaturthi.jpg", alt: "Happy Ganesh Chaturthi — May Bappa bring happiness, good health and endless glow. Glow with purity, shine with Oblic.",
   //   cta: { left: "87.8%", top: "49.1%", width: "10.2%", height: "3.9%" } },
   // { img: "/hero-janmashtami.jpg", alt: "Happy Janmashtami — Glow with purity, shine with Oblic. Festive Glow starts with Oblic.",
